@@ -63,7 +63,7 @@ router.get('/search', async (req, res) => {
         const data = await resp.json()
         if (data.terms?.length) {
           terms = data.terms
-          llmUsed = true
+          if (noLlm === 'false') llmUsed = true
         }
         // Only apply date/time filters in AI mode — non-AI search is pure keyword matching
         if (noLlm === 'false') {
