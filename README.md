@@ -4,7 +4,12 @@ This is the RaikesHacks 2026 project for the team "Is There Input Length Validat
 
 An event discovery app with a **Looking For Group** feature — find UNL events and organize groups to attend together.
 
-## Quick Start (2 commands)
+# Hosted at:
+
+# https://frontend-production-6a4e.up.railway.app/
+
+
+## Local Quick Start
 
 > **Prerequisites:** Node.js 18+ ([download](https://nodejs.org))
 
