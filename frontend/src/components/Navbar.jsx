@@ -75,7 +75,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSearchSubmit, on
       <div className="navbar-search" ref={searchRef}>
         <span className="navbar-search-icon">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </span>
         <input
@@ -100,7 +100,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSearchSubmit, on
         ref={taglineRef}
         className={`navbar-tagline ${showTagline ? '' : 'navbar-tagline-hidden'}`}
       >
-        We already know where you're going.
+        We already know<br />where you're going.
       </span>
 
       <div className="navbar-actions" ref={actionsRef}>
@@ -116,7 +116,7 @@ export default function Navbar({ searchQuery, onSearchChange, onSearchSubmit, on
               <span className="navbar-username">{user.name}</span>
               <button className="navbar-signout-btn" onClick={handleLogout} title="Sign out">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
                 <span className="navbar-signout-text">Sign out</span>
               </button>
