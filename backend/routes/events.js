@@ -65,8 +65,11 @@ router.get('/search', async (req, res) => {
           terms = data.terms
           llmUsed = true
         }
-        if (data.date_range) date_range = data.date_range
-        if (data.time_range) time_range = data.time_range
+        // Only apply date/time filters in AI mode — non-AI search is pure keyword matching
+        if (noLlm === 'false') {
+          if (data.date_range) date_range = data.date_range
+          if (data.time_range) time_range = data.time_range
+        }
         // Use FastAPI's results when available (warm cache / post-scrape pool)
         if (data.results?.length) {
           scored = data.results.map((r) => {
