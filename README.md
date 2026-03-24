@@ -49,24 +49,16 @@ Google Sign-In is required for groups and notifications. To enable it locally:
 
 ## Running Everything via Docker
 
-Docker adds live event scraping and LLM-powered natural-language search (FastAPI + Ollama).
+Docker adds live event scraping and Gemini-powered natural-language search.
 
 ```bash
-# Mac / CPU-only / Windows
 docker compose up --build
-
-# Linux + NVIDIA GPU
-docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up --build
-
-# Linux + AMD GPU (ROCm)
-docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build
 ```
 
 | Service | Port | Description |
 |---------|------|-------------|
 | `backend` | `3001` | Express + SQLite (events, groups, auth API) |
-| `api` | `8080` | FastAPI scraper + LLM search |
-| `ollama` | — | Local LLM inference (internal only) |
+| `api` | `8080` | FastAPI scraper + Gemini-powered search |
 
 ---
 
@@ -74,14 +66,17 @@ docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build
 
 - **Frontend:** React + Vite
 - **Backend:** Node.js + Express + SQLite (events, groups, auth)
-- **Scraper:** Python + FastAPI + Ollama (UNL event scraping + LLM search — Docker only)
+- **Scraper:** Python + FastAPI + Gemini API (UNL event scraping + LLM search — Docker only)
 
 ---
 
 ## Features
 
-- **Event discovery** — Browse and filter UNL events by category, date, and location
-- **AI search** — Natural-language search with keyword generalization (press Enter to submit)
+- **Event discovery** — Browse and filter UNL events by category, date, and location; results are paginated with a configurable page size
+- **AI search** — Natural-language search via Gemini API; press Enter to submit. AI automatically extracts date/time ranges from queries and reflects them in the sidebar date picker
+- **Keyword search** — Toggle off AI for instant debounced keyword search; date/time extraction is skipped and results are pure keyword matches
+- **Search debug panel** — Collapsible info panel below the result count showing LLM used, expanded terms, detected date/time filters, and FastAPI connection status
+- **Calendar export** — Download any event as an `.ics` file to add it directly to your calendar app
 - **Looking For Group** — Create or join groups for any event, with capacity limits, meetup details, and vibe tags
 - **Group messaging** — Real-time chat within groups (auto-refreshes every 3s), visible only to members
 - **My Groups** — Quick-access menu in the navbar showing all groups you belong to
@@ -94,8 +89,11 @@ docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build
 ## Architecture
 
 1. **Express API** (`backend/`) — Serves events, LFG groups, messages, and auth. Uses SQLite, zero config. Periodically pulls new events from the FastAPI scraper.
-2. **FastAPI Scraper** (`api/`) — Scrapes real UNL events from events.unl.edu + Campus Labs Engage, with optional LLM-powered keyword expansion via Ollama. Runs in Docker.
+2. **FastAPI Scraper** (`api/`) — Scrapes real UNL events from events.unl.edu + Campus Labs Engage, with optional LLM-powered keyword expansion via the Gemini API. Requires a `GEMINI_API_KEY`; falls back to raw keyword matching if absent. Runs in Docker.
 3. **Keyword Generalization** (`backend/keywords.js`) — At index time, generalizes event text into broader tags (e.g. "pizza" → food, "biology" → science) so searches find relevant events even when exact words don't match.
+4. **Search scoring** (`backend/routes/events.js`) — Events are scored by field weight (name ×4, venue/category ×2, description/tags ×1) and by term position (terms appearing earlier in the query rank higher).
+5. **Date filtering** — The sidebar calendar is the single source of truth. In AI mode, detected date ranges auto-populate the sidebar and can be further adjusted by the user. In keyword mode, date filters are not extracted from the query.
+6. **ICS export** (`frontend/src/utils/icsGenerator.js`) — Generates RFC 5545-compliant `.ics` files client-side for any event.
 
 ---
 
@@ -106,7 +104,7 @@ docker compose -f docker-compose.yml -f docker-compose.amd.yml up --build
 |--------|------|-------------|
 | GET | `/api/events` | List all events (includes group counts) |
 | GET | `/api/events/:id` | Get a single event |
-| GET | `/api/events/search?q=` | Keyword/AI search — returns matches ranked by relevance |
+| GET | `/api/events/search?q=&no_llm=` | Keyword/AI search — returns matches ranked by relevance. Pass `no_llm=true` to skip LLM and use pure keyword matching |
 
 ### Groups
 | Method | Path | Description |
@@ -152,6 +150,8 @@ All env vars go in `backend/.env` (created by `cp .env.example backend/.env`). T
 | `EVENTS_API_URL` | Docker | URL of the `/events` endpoint for periodic refresh |
 | `REFRESH_INTERVAL_MS` | Optional | Event refresh interval in ms (default: 3600000 = 1 hour) |
 | `NODE_ENV` | Production | Set to `production` to enable secure cookies and static serving |
+| `GEMINI_API_KEY` | For AI search | Google Gemini API key — enables natural-language keyword expansion and date/time extraction. Falls back to raw keyword search if not set. Also accepted as `GOOGLE_API_KEY` |
+| `GEMINI_MODEL` | Optional | Gemini model to use for search (default: `gemma-3-27b-it`) |
 
 ---
 
@@ -188,6 +188,13 @@ railway variable --service backend set \
   GOOGLE_CALLBACK_URL=https://<your-backend-domain>/api/auth/google/callback \
   SESSION_SECRET=<random-string> \
   FRONTEND_URL=https://<your-frontend-domain>
+```
+
+Set the Gemini API key on the scraper (`api`) service to enable AI search:
+
+```bash
+railway variable --service api set \
+  GEMINI_API_KEY=<your-gemini-api-key>
 ```
 
 Also add `https://<your-backend-domain>/api/auth/google/callback` to **Authorized redirect URIs** in Google Cloud Console.
