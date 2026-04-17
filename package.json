@@ -10,6 +10,8 @@
     "start": "cd backend && npm start",
     "build": "cd frontend && npm run build",
     "benchmark:smoke": "python -m testing.benchmark.run_benchmark --profile smoke",
+    "benchmark:correctness": "python -m testing.benchmark.run_benchmark --suite correctness --profile smoke",
+    "benchmark:latency": "python -m testing.benchmark.run_benchmark --suite latency-stability --profile smoke",
     "benchmark:full": "python -m testing.benchmark.run_benchmark --profile full",
     "benchmark:first-pass": "python -m testing.benchmark.run_benchmark --profile smoke --model-set hf-first-pass",
     "benchmark:hf:router-chat": "python -m testing.benchmark.run_benchmark --profile smoke --model-set hf-router-chat",

@@ -4,7 +4,7 @@ from typing import Dict
 
 
 MODEL_SETS: Dict[str, str] = {
-    "baseline": "gemini:gemma-3-27b-it,ollama:llama3.1",
+    "baseline": "gemini:gemma-3-27b-it,ollama:llama3:latest",
     "hf-router-chat": ",".join(
         [
             "huggingface:google/gemma-4-31B-it",

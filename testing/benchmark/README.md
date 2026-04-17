@@ -18,6 +18,18 @@ Run smoke profile (small labeled dataset):
 python -m testing.benchmark.run_benchmark --profile smoke
 ```
 
+Run correctness suite (strict label validation + correctness gate profile):
+
+```bash
+python -m testing.benchmark.run_benchmark --suite correctness --profile smoke
+```
+
+Run latency/stability suite (repeated runs + latency/stability gate profile):
+
+```bash
+python -m testing.benchmark.run_benchmark --suite latency-stability --profile smoke
+```
+
 Run full profile (generates a 100-case template in-memory):
 
 ```bash
@@ -41,12 +53,12 @@ Run specific models:
 ```bash
 python -m testing.benchmark.run_benchmark \
   --profile smoke \
-  --models "gemini:gemma-3-27b-it,ollama:llama3.1"
+  --models "gemini:gemma-3-27b-it,ollama:llama3:latest"
 ```
 
 ## Model sets
 
-- `baseline`: `gemini:gemma-3-27b-it,ollama:llama3.1`
+- `baseline`: `gemini:gemma-3-27b-it,ollama:llama3:latest`
 - `hf-router-chat`: `huggingface:google/gemma-4-31B-it,huggingface:Qwen/Qwen3.5-9B,huggingface:CohereLabs/c4ai-command-r7b-12-2024`
 - `hf-local-lite`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0`
 - `hf-first-pass`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0,huggingface:google/gemma-2-2b-it,huggingface:Qwen/Qwen2.5-3B-Instruct,huggingface:microsoft/Phi-3-mini-4k-instruct,huggingface:mistralai/Mistral-7B-Instruct-v0.2`
@@ -61,6 +73,16 @@ python -m testing.benchmark.list_hf_models --limit 50
 The `hf-first-pass` and `all` sets include legacy models that may work best with local backend or older hosted endpoints.
 
 Use `--model-set <name>` to run a named set, or `--models` to override with an explicit list.
+
+## Suite and gate options
+
+- `--suite default|correctness|latency-stability`
+  - `correctness`: enables strict label validation and correctness gate profile.
+  - `latency-stability`: enables strict label validation, sets repeated runs (3) by default, and uses latency/stability gate profile.
+- `--gate-profile none|correctness|latency-stability|all` to override gate behavior.
+- `--enforce-label-quality` to validate dataset label completeness and formatting before running.
+- `--expected-label-status <status>` to require dataset metadata label status (for example `approved-manual`).
+- `--skip-visuals` to disable chart generation.
 
 Write a 100-case labeling template file:
 
@@ -135,6 +157,9 @@ Each run creates a timestamped folder in `testing/benchmark/reports/`:
 - `summary.json` - machine-readable metrics per model
 - `per_query.csv` - detailed output for every query/model run
 - `summary.md` - quick comparison table
+- `gate_results.json` - pass/fail checks by model for active gate profile
+- `gate_results.md` - human-readable gate summary
+- `visuals/*.png` - static comparison charts (when matplotlib is available)
 
 For `--profile full` without a custom dataset, a `generated_full_template.json` is also written into the run directory for manual labeling.
 

@@ -19,3 +19,5 @@ dist/
 # Misc
 scraped/*.json.bak
 backend/uploads/
+
+testing/benchmark/reports/

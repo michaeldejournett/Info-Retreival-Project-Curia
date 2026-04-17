@@ -106,3 +106,57 @@ def write_summary_markdown(path: Path, summaries: Iterable[ModelRunSummary]) -> 
 
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return out
+
+
+def write_gate_results_json(path: Path, gate_profile: str, gate_results: List[Dict[str, object]]) -> Path:
+    out = path / "gate_results.json"
+    payload = {
+        "gate_profile": gate_profile,
+        "model_results": gate_results,
+    }
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return out
+
+
+def write_gate_results_markdown(path: Path, gate_profile: str, gate_results: List[Dict[str, object]]) -> Path:
+    out = path / "gate_results.md"
+    lines = [
+        "# Gate Results",
+        "",
+        f"Gate profile: `{gate_profile}`",
+        "",
+        "| Model | Passed | Failed Checks |",
+        "|---|---:|---|",
+    ]
+
+    for row in gate_results:
+        model_key = str(row.get("model_key") or "")
+        passed = bool(row.get("passed"))
+        checks = row.get("checks") or []
+        failed = [
+            str(c.get("name"))
+            for c in checks
+            if isinstance(c, dict) and not bool(c.get("passed"))
+        ]
+        failed_text = ", ".join(failed) if failed else "-"
+        lines.append(f"| {model_key} | {'yes' if passed else 'no'} | {failed_text} |")
+
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return out
+
+
+def append_visuals_to_summary(summary_md_path: Path, visual_artifacts: List[str]) -> None:
+    if not visual_artifacts:
+        return
+
+    existing = summary_md_path.read_text(encoding="utf-8")
+    rel_paths = [Path(p).as_posix() for p in visual_artifacts]
+    lines = [
+        existing.rstrip(),
+        "",
+        "## Visual Artifacts",
+        "",
+    ]
+    lines.extend([f"- `{p}`" for p in rel_paths])
+    lines.append("")
+    summary_md_path.write_text("\n".join(lines), encoding="utf-8")
