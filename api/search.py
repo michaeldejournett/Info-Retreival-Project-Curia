@@ -144,6 +144,49 @@ def expand_with_gemini(query: str, model: str) -> Tuple[Optional[List[str]], Opt
         return None, None, None
 
 
+def expand_with_local(
+    query: str,
+) -> Tuple[Optional[List[str]], Optional[Tuple[date, date]], Optional[Tuple[Optional[time], Optional[time]]]]:
+    """Local two-stage expansion: Stage 1 temporal + Stage 2 keyword expansion."""
+    try:
+        from local_models import is_loaded
+        from temporal import extract_temporal
+        from expansion import expand_keywords
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Local model modules unavailable: %s", exc)
+        return None, None, None
+
+    if not is_loaded():
+        return None, None, None
+
+    keywords = expand_keywords(query)
+    date_range, time_range = extract_temporal(query)
+    return keywords, date_range, time_range
+
+
+def expand_query(
+    query: str, gemini_model: str,
+) -> Tuple[Optional[List[str]], Optional[Tuple[date, date]], Optional[Tuple[Optional[time], Optional[time]]], str]:
+    """Dispatcher: route to local stack or Gemini based on USE_LOCAL_MODELS.
+    Returns (keywords, date_range, time_range, backend_used) where backend_used is
+    one of "local", "gemini", or "none"."""
+    use_local = os.environ.get("USE_LOCAL_MODELS", "false").lower() in ("1", "true", "yes")
+    fallback = os.environ.get("LOCAL_MODEL_FALLBACK_TO_GEMINI", "true").lower() in ("1", "true", "yes")
+
+    if use_local:
+        kw, dr, tr = expand_with_local(query)
+        if kw is not None or dr is not None or tr is not None:
+            return kw, dr, tr, "local"
+        if not fallback:
+            return None, None, None, "none"
+
+    kw, dr, tr = expand_with_gemini(query, gemini_model)
+    if kw is not None or dr is not None or tr is not None:
+        return kw, dr, tr, "gemini"
+    return None, None, None, "none"
+
+
 def extract_date_range(query: str) -> Optional[Tuple[date, date]]:
     """Parse a date range from natural language in the query."""
     import dateparser.search
@@ -260,7 +303,13 @@ def main() -> int:
     parser.add_argument(
         "--no-llm",
         action="store_true",
-        help="Skip Gemini expansion, use raw keywords only",
+        help="Skip LLM expansion, use raw keywords only",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=["auto", "gemini", "local"],
+        default="auto",
+        help="Expansion backend: 'auto' honors USE_LOCAL_MODELS env, 'gemini' or 'local' force one.",
     )
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
@@ -271,8 +320,21 @@ def main() -> int:
     llm_date_range = None
     llm_time_range = None
     if not args.no_llm:
-        print(f"Expanding with Gemini ({args.model}) …", file=sys.stderr)
-        llm_keywords, llm_date_range, llm_time_range = expand_with_gemini(query, args.model)
+        if args.backend == "local":
+            from local_models import load_local_models
+            load_local_models()
+            print("Expanding with local model …", file=sys.stderr)
+            llm_keywords, llm_date_range, llm_time_range = expand_with_local(query)
+        elif args.backend == "gemini":
+            print(f"Expanding with Gemini ({args.model}) …", file=sys.stderr)
+            llm_keywords, llm_date_range, llm_time_range = expand_with_gemini(query, args.model)
+        else:
+            use_local = os.environ.get("USE_LOCAL_MODELS", "false").lower() in ("1", "true", "yes")
+            if use_local:
+                from local_models import load_local_models
+                load_local_models()
+            print(f"Expanding ({'local' if use_local else 'gemini'}) …", file=sys.stderr)
+            llm_keywords, llm_date_range, llm_time_range, _backend = expand_query(query, args.model)
         if llm_keywords:
             llm_keywords = [k for k in llm_keywords if k not in STOP_WORDS and len(k) > 1]
             print(f"  LLM keywords : {llm_keywords}", file=sys.stderr)
@@ -286,7 +348,7 @@ def main() -> int:
                     terms.append(kw)
                     seen.add(kw)
         else:
-            print("  Gemini unavailable — falling back to raw keywords.", file=sys.stderr)
+            print("  LLM unavailable — falling back to raw keywords.", file=sys.stderr)
 
     if not terms:
         print("No search terms found in query.", file=sys.stderr)

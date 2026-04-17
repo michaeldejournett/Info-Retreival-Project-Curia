@@ -67,6 +67,7 @@ docker compose up --build
 - **Frontend:** React + Vite
 - **Backend:** Node.js + Express + SQLite (events, groups, auth)
 - **Scraper:** Python + FastAPI + Gemini API (UNL event scraping + LLM search — Docker only)
+- **Local LLM pipeline (optional):** Two fine-tuned HuggingFace models running on CPU — `satyaalmasian/temporal_tagger_roberta2roberta` (~330M) for TIMEX3 temporal extraction and `google/flan-t5-base` (~250M) for semantic keyword expansion. Used as a local alternative to Gemini when `USE_LOCAL_MODELS=true`.
 
 ---
 
@@ -89,7 +90,12 @@ docker compose up --build
 ## Architecture
 
 1. **Express API** (`backend/`) — Serves events, LFG groups, messages, and auth. Uses SQLite, zero config. Periodically pulls new events from the FastAPI scraper.
-2. **FastAPI Scraper** (`api/`) — Scrapes real UNL events from events.unl.edu + Campus Labs Engage, with optional LLM-powered keyword expansion via the Gemini API. Requires a `GEMINI_API_KEY`; falls back to raw keyword matching if absent. Runs in Docker.
+2. **FastAPI Scraper** (`api/`) — Scrapes real UNL events from events.unl.edu + Campus Labs Engage, with optional LLM-powered keyword expansion. Two backends supported:
+   - **Gemini API** (default) — single call extracts keywords + date/time in one pass. Requires `GEMINI_API_KEY`.
+   - **Local two-stage pipeline** (`USE_LOCAL_MODELS=true`) — runs fully offline on CPU:
+     - *Stage 1* — [`api/temporal.py`](api/temporal.py) calls `satyaalmasian/temporal_tagger_roberta2roberta` to emit TIMEX3 tags, then [`api/timex3.py`](api/timex3.py) resolves each `value` attribute (`P2W`, `2026-W17-WE`, `TMO`, `FUTURE_REF`, etc.) into concrete ISO date/time ranges relative to today.
+     - *Stage 2* — [`api/expansion.py`](api/expansion.py) calls `google/flan-t5-base` to expand keywords semantically.
+   - Both paths fall through to `dateparser` + raw keyword matching if the LLMs are unavailable. Runs in Docker.
 3. **Keyword Generalization** (`backend/keywords.js`) — At index time, generalizes event text into broader tags (e.g. "pizza" → food, "biology" → science) so searches find relevant events even when exact words don't match.
 4. **Search scoring** (`backend/routes/events.js`) — Events are scored by field weight (name ×4, venue/category ×2, description/tags ×1) and by term position (terms appearing earlier in the query rank higher).
 5. **Date filtering** — The sidebar calendar is the single source of truth. In AI mode, detected date ranges auto-populate the sidebar and can be further adjusted by the user. In keyword mode, date filters are not extracted from the query.
@@ -152,6 +158,10 @@ All env vars go in `backend/.env` (created by `cp .env.example backend/.env`). T
 | `NODE_ENV` | Production | Set to `production` to enable secure cookies and static serving |
 | `GEMINI_API_KEY` | For AI search | Google Gemini API key — enables natural-language keyword expansion and date/time extraction. Falls back to raw keyword search if not set. Also accepted as `GOOGLE_API_KEY` |
 | `GEMINI_MODEL` | Optional | Gemini model to use for search (default: `gemma-3-27b-it`) |
+| `USE_LOCAL_MODELS` | Optional | `true` to route searches through the local two-stage LLM pipeline instead of Gemini (default: `false`) |
+| `TEMPORAL_MODEL_ID` | Optional | HuggingFace ID for Stage 1 (default: `satyaalmasian/temporal_tagger_roberta2roberta`) |
+| `EXPANSION_MODEL_ID` | Optional | HuggingFace ID for Stage 2 (default: `google/flan-t5-base`) |
+| `LOCAL_MODEL_FALLBACK_TO_GEMINI` | Optional | `true` to retry with Gemini when local stack fails (default: `true`) |
 
 ---
 
