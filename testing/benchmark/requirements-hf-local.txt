@@ -1,0 +1,8 @@
+# Local Hugging Face runtime for benchmark adapter (in-process)
+# Install GPU-enabled torch build appropriate for your machine if needed.
+transformers>=4.40.0
+accelerate>=0.30.0
+sentencepiece>=0.2.0
+safetensors>=0.4.0
+torch>=2.2.0
+requests>=2.31.0

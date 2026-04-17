@@ -8,7 +8,13 @@
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "start": "cd backend && npm start",
-    "build": "cd frontend && npm run build"
+    "build": "cd frontend && npm run build",
+    "benchmark:smoke": "python -m testing.benchmark.run_benchmark --profile smoke",
+    "benchmark:full": "python -m testing.benchmark.run_benchmark --profile full",
+    "benchmark:first-pass": "python -m testing.benchmark.run_benchmark --profile smoke --model-set hf-first-pass",
+    "benchmark:local-lite": "python -m testing.benchmark.run_benchmark --profile smoke --model-set hf-local-lite --huggingface-backend local",
+    "benchmark:first-pass:local": "python -m testing.benchmark.run_benchmark --profile smoke --model-set hf-first-pass --huggingface-backend local",
+    "benchmark:run-all": "python -m testing.benchmark.run_benchmark --profile smoke --model-set all"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
