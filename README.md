@@ -62,6 +62,27 @@ docker compose up --build
 
 ---
 
+## Testing & Evaluation
+
+### Run the test suite
+
+```bash
+pip install -r api/requirements.txt pytest
+python -m pytest tests/
+```
+
+### Generate search metrics and charts
+
+```bash
+pip install matplotlib numpy
+python scripts/generate_search_metrics.py   # writes metrics/ JSON + CSV
+python scripts/plot_search_metrics.py       # writes metrics/ PNG charts
+```
+
+`generate_search_metrics.py` must run before the plot script. All output lands in `metrics/`. See [docs/graphs.md](docs/graphs.md) for a description of every chart.
+
+---
+
 ## Tech Stack
 
 - **Frontend:** React + Vite
