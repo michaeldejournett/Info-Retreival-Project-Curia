@@ -18,6 +18,7 @@ def load_project_env_once() -> None:
         project_root / ".env",
         project_root / ".env.local",
         project_root / "backend" / ".env",
+        project_root / "api" / ".env",
     ]
 
     for env_path in env_paths:
@@ -44,7 +45,13 @@ def load_project_env_once() -> None:
             key = key.strip()
             value = value.strip()
 
-            if not key or key in os.environ:
+            if not key:
+                continue
+
+            # Preserve explicit non-empty process env vars, but allow replacing
+            # placeholders like HF_TOKEN="" with values from .env files.
+            existing_value = os.environ.get(key)
+            if existing_value is not None and existing_value.strip() != "":
                 continue
 
             if value and value[0] == value[-1] and value[0] in {'"', "'"}:

@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY search.py api.py scraper.py ./
+COPY search.py api.py scraper.py prompt_templates.py ./
 
 ENV EVENTS_FILE=scraped/events.json
 ENV SCRAPE_INTERVAL=3600

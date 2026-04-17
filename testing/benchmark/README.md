@@ -2,6 +2,8 @@
 
 This benchmark compares model extraction quality and latency for Curia search.
 
+Benchmark prompts are sourced from the same production template used by the API service to ensure prompt parity across providers.
+
 ## Scope
 
 - Provider families: Gemini, Ollama, Hugging Face
@@ -45,9 +47,18 @@ python -m testing.benchmark.run_benchmark \
 ## Model sets
 
 - `baseline`: `gemini:gemma-3-27b-it,ollama:llama3.1`
+- `hf-router-chat`: `huggingface:google/gemma-4-31B-it,huggingface:Qwen/Qwen3.5-9B,huggingface:CohereLabs/c4ai-command-r7b-12-2024`
 - `hf-local-lite`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0`
 - `hf-first-pass`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0,huggingface:google/gemma-2-2b-it,huggingface:Qwen/Qwen2.5-3B-Instruct,huggingface:microsoft/Phi-3-mini-4k-instruct,huggingface:mistralai/Mistral-7B-Instruct-v0.2`
 - `all`: `gemini:gemma-3-27b-it,huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0,huggingface:google/gemma-2-2b-it,huggingface:Qwen/Qwen2.5-3B-Instruct,huggingface:microsoft/Phi-3-mini-4k-instruct,huggingface:mistralai/Mistral-7B-Instruct-v0.2`
+
+Hosted Hugging Face availability depends on providers enabled for your token. If a model reports `model_not_supported`, list available hosted models first:
+
+```bash
+python -m testing.benchmark.list_hf_models --limit 50
+```
+
+The `hf-first-pass` and `all` sets include legacy models that may work best with local backend or older hosted endpoints.
 
 Use `--model-set <name>` to run a named set, or `--models` to override with an explicit list.
 
@@ -64,15 +75,19 @@ python -m testing.benchmark.run_benchmark \
 - `GEMINI_API_KEY` or `GOOGLE_API_KEY`
 - `OLLAMA_BASE_URL` (optional, default `http://localhost:11434`)
 - `HUGGINGFACE_API_TOKEN` or `HF_TOKEN`
-- `HUGGINGFACE_BASE_URL` (optional, default `https://api-inference.huggingface.co/models`)
+- `HUGGINGFACE_BASE_URL` (optional, default `https://router.huggingface.co/v1/chat/completions`)
 - `HUGGINGFACE_BACKEND` (optional, `api` or `local`; default `api`)
 - `HUGGINGFACE_LOCAL_DEVICE` (optional, `auto`/`cpu`/`cuda`/`mps`; default `auto`)
 - `HUGGINGFACE_LOCAL_DTYPE` (optional, `auto`/`float16`/`bfloat16`/`float32`/`none`; default `auto`)
 - `HUGGINGFACE_LOCAL_TRUST_REMOTE_CODE` (optional, `true`/`false`; default `false`)
 
-Gemini and Hugging Face keys can be defined in project environment files (`.env`, `.env.local`, or `backend/.env`).
+Gemini and Hugging Face keys can be defined in project environment files (`.env`, `.env.local`, `backend/.env`, or `api/.env`).
+
+If a shell variable exists but is empty (for example, `HF_TOKEN=""`), the benchmark loader will now replace it with the non-empty value from these `.env` files.
 
 Some Hugging Face models may be gated and require accepted model terms on your Hugging Face account.
+
+Legacy text-generation endpoint (`https://api-inference.huggingface.co/models`) can still be used by setting `HUGGINGFACE_BASE_URL` explicitly, but hosted model coverage is now primarily via the router chat-completions API.
 
 When using `HUGGINGFACE_BACKEND=local`, model weights run on your machine via `transformers` + `torch` and no Hugging Face API token is required for public models.
 

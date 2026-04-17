@@ -5,6 +5,13 @@ from typing import Dict
 
 MODEL_SETS: Dict[str, str] = {
     "baseline": "gemini:gemma-3-27b-it,ollama:llama3.1",
+    "hf-router-chat": ",".join(
+        [
+            "huggingface:google/gemma-4-31B-it",
+            "huggingface:Qwen/Qwen3.5-9B",
+            "huggingface:CohereLabs/c4ai-command-r7b-12-2024",
+        ]
+    ),
     "hf-local-lite": ",".join(
         [
             "huggingface:MBZUAI/LaMini-Flan-T5-248M",
