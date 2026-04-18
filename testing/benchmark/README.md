@@ -92,6 +92,32 @@ python -m testing.benchmark.run_benchmark \
   --profile smoke
 ```
 
+## Rigorous datasets
+
+The benchmark now includes larger auto-derived datasets based on `scraped/events.json`:
+
+- `testing/benchmark/datasets/queries_rigorous_retrieval.json` (96 cases)
+- `testing/benchmark/datasets/queries_rigorous_temporal.json` (72 cases)
+- `testing/benchmark/datasets/queries_rigorous_robustness.json` (72 cases)
+
+Run correctness suite against each dataset:
+
+```bash
+python -m testing.benchmark.run_benchmark \
+  --suite correctness \
+  --dataset testing/benchmark/datasets/queries_rigorous_retrieval.json
+
+python -m testing.benchmark.run_benchmark \
+  --suite correctness \
+  --dataset testing/benchmark/datasets/queries_rigorous_temporal.json
+
+python -m testing.benchmark.run_benchmark \
+  --suite correctness \
+  --dataset testing/benchmark/datasets/queries_rigorous_robustness.json
+```
+
+These datasets use `metadata.label_status=heuristic-auto`. They are designed for stress testing and rapid iteration; manually review or relabel subsets before using them for final model selection decisions.
+
 ## Environment variables
 
 - `GEMINI_API_KEY` or `GOOGLE_API_KEY`
