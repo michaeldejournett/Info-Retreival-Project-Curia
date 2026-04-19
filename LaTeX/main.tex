@@ -24,12 +24,36 @@
     captionpos=b
 }
 
-\title{Curia: Few-Shot Temporal Query Grounding for Event Search}
+\title{Curia-Lite: Minimizing Model Size for Keyword and Temporal Query Extraction}
 
 \author{
-    Author Name\\
-    Institution Name\\
-    Email: email@example.com
+    \IEEEauthorblockN{Will Adair}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: wadair2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Will Glover}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: wglover2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Rishi Krishna}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: rkrishna2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Michael Dejournett}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: mdejournett2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Amy Nguyen}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: anguyen105@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Maya Wilson}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: mwilson75@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Krishnaraj Ganesan}
+    \IEEEauthorblockA{University of Nebraska - Lincoln\\
+    Email: krishnarajganesan@nebraska.edu}
 }
 
 \begin{document}
@@ -37,31 +61,31 @@
 \maketitle
 
 \begin{abstract}
-    This paper presents Curia, a lightweight system for extracting temporal boundaries from natural language event search queries. Given a user query such as "Show me events next Saturday evening," Curia extracts structured temporal constraints (date and time ranges) suitable for downstream event retrieval systems. Our approach combines few-shot fine-tuning of a small language model (trained on just 4 examples) with rule-based fallback mechanisms for robustness. The system runs locally on consumer hardware, returns JSON-structured temporal boundaries, and achieves high accuracy with minimal training data. We demonstrate the effectiveness of this approach across diverse temporal expressions and show that simple few-shot learning paired with heuristic fallbacks can effectively ground temporal queries without complex architectures or large annotated datasets.
+    This paper reframes Curia as an efficiency study centered on model-size minimization for event query understanding. We investigate how far the model can be reduced while preserving the core capabilities of keyword extraction and temporal extraction. Using a consistent local inference pipeline, we compare model variants from 27B parameters down to 256M parameters and analyze their tradeoffs in extraction behavior, latency, and memory usage. Results indicate that substantial size reduction is feasible for many practical query patterns, especially when structured output constraints are paired with rule-based fallbacks for temporal edge cases. We also identify failure patterns where aggressive downsizing weakens temporal interpretation under ambiguous phrasing. These findings provide a practical framework for selecting the smallest viable model that still supports reliable keyword and time-aware event retrieval.
 \end{abstract}
 
 \begin{IEEEkeywords}
-    Temporal Extraction, Query Understanding, Few-Shot Learning, Event Search, Local Inference
+    Lightweight Models, Temporal Grounding, Information Retrieval, Query Parsing, Edge Inference
 \end{IEEEkeywords}
 
 \section{Introduction}
 \label{sec:intro}
 
-Event search systems require precise temporal constraints to effectively retrieve relevant events. Users typically express temporal preferences in natural language: "Show me events next Saturday evening" or "Find concerts tomorrow afternoon." Converting these free-form temporal expressions into structured time boundaries is essential for event filtering and ranking.
+Event search systems depend on two query-understanding capabilities: extracting intent-bearing keywords and grounding temporal expressions into usable date/time constraints. In practice, these systems are often deployed under strict memory and latency budgets, which raises a central design tension between model size and extraction reliability.
 
-Most temporal extraction systems are either over-engineered for this specific use case or require substantial training data. Existing approaches often employ complex sequence labeling architectures, large pre-trained models, or hand-crafted rule sets that are brittle and domain-specific.
+This paper studies that tension directly in Curia. Rather than prioritizing architectural novelty, we evaluate whether reducing model size can preserve the behaviors needed for downstream retrieval. We focus on two research questions: (1) can model size be reduced while retaining keyword extraction performance, and (2) can model size be reduced while retaining temporal extraction performance.
 
-This paper presents Curia, a pragmatic approach to temporal query grounding that achieves strong performance with minimal overhead:
+Our results show asymmetric behavior across tasks. Keyword extraction remains functional at substantially smaller scales, including compact models, while temporal structure extraction degrades more quickly under aggressive downsizing. Brief rule-based fallbacks improve robustness for some temporal edge cases, but they do not fully remove this gap.
+
+This paper makes three contributions:
 
 \begin{itemize}
-    \item \textbf{Few-shot learning}: Fine-tunes a small language model using only 4 example queries
-    \item \textbf{Local execution}: Runs entirely on consumer hardware without external API calls
-    \item \textbf{Structured output}: Returns JSON with explicit date and time ranges (ISO 8601 format)
-    \item \textbf{Graceful degradation}: Falls back to rule-based extraction when the model is uncertain
-    \item \textbf{Simplicity}: Avoids complex architectures in favor of a straightforward pipeline
+    \item \textbf{Task-specific size analysis}: We provide an empirical analysis of model downsizing effects on keyword extraction and temporal extraction within the same event-search pipeline.
+    \item \textbf{Failure characterization}: We document how and where temporal extraction quality breaks down as model capacity decreases, including the role and limits of fallback rules.
+    \item \textbf{Deployment guidance}: We present practical guidance for selecting model scales based on feature priorities, especially when keyword extraction is required under tight resource constraints.
 \end{itemize}
 
-The remainder of this paper is organized as follows: Section~\ref{sec:related} reviews related work in temporal information extraction and few-shot learning, Section~\ref{sec:method} describes the Curia system design, Section~\ref{sec:experiments} presents empirical results, and Section~\ref{sec:conclusion} concludes with insights and future directions.
+The remainder of this paper is organized as follows: Section~\ref{sec:related} reviews related work, Section~\ref{sec:method} describes the Curia design and minimization setup, Section~\ref{sec:experiments} reports the evaluation, and Section~\ref{sec:conclusion} concludes with implications and future work.
 
 \section{Related Work}
 \label{sec:related}
@@ -85,65 +109,71 @@ While pure learning-based approaches are appealing, combining neural models with
 \section{Methodology}
 \label{sec:method}
 
-\subsection{System Overview}
+\subsection{Divergence-Centered Study Design}
 
-Curia is a lightweight pipeline for converting natural language event queries into structured temporal constraints. The system consists of three stages: (1) query input, (2) neural temporal extraction with optional rule-based fallback, and (3) JSON output with date and time ranges.
+The methodology is designed to measure how capability diverges across tasks as model size is reduced. Prior scaling-law work motivates the expectation that capability does not decline uniformly across behaviors when capacity changes~\cite{kaplan2020scaling,hoffmann2022training}. We therefore evaluate downsizing with two coupled objectives: preserve keyword extraction as much as possible and measure where temporal extraction degrades.
 
-\subsection{Input Format and Task Definition}
+\subsection{Model Scale Configuration}
 
-Given a user query $q$ (e.g., "Show me events next Saturday evening"), Curia extracts four temporal boundaries:
+We use a model-family scaling setup only. No quantization, pruning, or distillation is applied. The evaluated parameter scales are 31B, 27B, 5B, 1B, 0.5B, and 256M. This isolates size as the primary experimental factor and reduces confounding from additional compression techniques.
+
+\subsection{Task Outputs and Extraction Targets}
+
+Given a query $q$, Curia produces two outputs:
 \begin{itemize}
-    \item \texttt{date\_from}: Start date (ISO 8601 format)
-    \item \texttt{date\_to}: End date (ISO 8601 format)
-    \item \texttt{time\_from}: Start time in 24-hour format (HH:MM)
-    \item \texttt{time\_to}: End time in 24-hour format (HH:MM)
+    \item \textbf{Keyword output}: A set of intent-bearing lexical items used for retrieval matching.
+    \item \textbf{Temporal output}: A structured JSON object containing \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, and \texttt{time\_to}.
 \end{itemize}
 
-For example, the query "next Saturday evening" should produce:
-\begin{verbatim}
-{
-  "date_from": "2026-04-26",
-  "date_to": "2026-04-26",
-  "time_from": "17:00",
-  "time_to": "21:00"
-}
-\end{verbatim}
+For example, "next Saturday evening jazz" should yield both a keyword set that includes the event intent term (e.g., "jazz") and temporal boundaries matching the expression "next Saturday evening."
 
-\subsection{Few-Shot Model Fine-Tuning}
+\subsection{Divergence Definition}
 
-Rather than training from scratch or using large pre-trained models, we fine-tune a small pre-trained language model on just 4 example queries. Each example consists of:
+We define divergence in two forms:
 \begin{itemize}
-    \item A natural language query
-    \item The expected JSON output with temporal boundaries
+    \item \textbf{Performance divergence}: The gap between normalized keyword quality and normalized temporal quality at each model size.
+    \item \textbf{Error-type divergence}: Differences in dominant failure patterns between tasks as model size decreases.
 \end{itemize}
 
-The model learns to map from natural language to the structured output format. Fine-tuning requires only a single forward-backward pass through the training set, making the approach extremely efficient and practical for deployment.
+Let $s_{\max}$ denote the largest model (31B) and $s$ any smaller model. We normalize each task score to its value at $s_{\max}$:
+\[
+\hat{F1}_{\mathrm{kw}}(s)=\frac{F1_{\mathrm{kw}}(s)}{F1_{\mathrm{kw}}(s_{\max})}, \quad
+\hat{EM}_{\mathrm{temp}}(s)=\frac{EM_{\mathrm{temp}}(s)}{EM_{\mathrm{temp}}(s_{\max})}.
+\]
 
-\subsection{Inference}
+Performance divergence is then:
+\[
+D_{\mathrm{perf}}(s)=\hat{F1}_{\mathrm{kw}}(s)-\hat{EM}_{\mathrm{temp}}(s).
+\]
 
-At inference time, the model receives a query and generates token predictions that are parsed as JSON. The model is constrained to output valid JSON structure, ensuring structured, parseable results.
+Positive $D_{\mathrm{perf}}(s)$ indicates keyword extraction is retained better than temporal extraction at size $s$.
 
-\subsection{Rule-Based Fallback Mechanism}
+\subsection{Training and Inference Controls}
 
-The neural model alone may miss or misinterpret certain temporal expressions. We implement two rule-based fallback mechanisms:
-
+To keep comparisons fair across model sizes, we hold the protocol constant:
 \begin{itemize}
-    \item \textbf{Date Parser Fallback}: A date parsing library (e.g., dateparser) extracts explicit dates like "April 25", "2026-04-25", or relative dates like "tomorrow". This handles cases where the model fails to recognize clear date strings.
-
-    \item \textbf{Temporal Keyword Fallback}: A keyword matcher identifies common time-of-day expressions ("morning" $\rightarrow$ 06:00-12:00, "afternoon" $\rightarrow$ 12:00-17:00, "evening" $\rightarrow$ 17:00-21:00, "night" $\rightarrow$ 21:00-06:00) and applies them when the model cannot extract explicit times.
+    \item Same query set and annotation schema
+    \item Same prompt structure and decoding configuration
+    \item Same post-processing rules and JSON validation
+    \item Same hardware environment for latency and memory measurement
 \end{itemize}
 
-When the model's confidence is below a threshold or produces malformed output, the system falls back to these rules, ensuring graceful degradation and continued functionality even on edge cases.
+These controls ensure observed differences are attributable primarily to model capacity.
 
-\subsection{Local Execution}
+\subsection{Controlled Fallback Layer}
 
-All processing runs locally on consumer hardware without requiring external API calls or cloud services. This design choice ensures:
+Fallback rules are applied consistently for all model sizes as a controlled robustness layer. The date parser fallback addresses explicit and relative date mentions, and the temporal keyword fallback maps common time-of-day terms to fixed ranges. Applying the same fallback policy to every model allows us to compare divergence under a stable hybrid configuration rather than mixing different recovery behaviors by size.
+
+\subsection{Measurement Pipeline}
+
+For each query-model pair, we compute keyword F1, temporal exact match, latency, and memory usage. We then aggregate by model size and analyze:
 \begin{itemize}
-    \item Privacy: User queries never leave the device
-    \item Latency: Sub-100ms inference typical
-    \item Cost: No API fees or infrastructure overhead
-    \item Reliability: No dependency on external services
+    \item Divergence curves from $D_{\mathrm{perf}}(s)$
+    \item Error-type shifts for keyword vs. temporal outputs
+    \item Size-efficiency tradeoffs under the same fallback regime
 \end{itemize}
+
+This pipeline provides a direct view of where downsizing remains acceptable for keyword extraction and where temporal extraction becomes the limiting factor.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -285,20 +315,8 @@ Possible extensions include:
     \item \textbf{Integration with NLU}: Combining with entity/intent extraction for richer query understanding
 \end{itemize}
 
-\begin{thebibliography}{99}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 
-\bibitem{karpukhin2020dense}
-V. Karpukhin et al., ``Dense passage retrieval for open-domain question answering,'' in \textit{Proc. EMNLP}, 2020.
-
-\bibitem{khattab2020colbert}
-O. Khattab and M. Zaharia, ``ColBERT: Efficient and effective passage search via contextualized late interaction over BERT,'' in \textit{Proc. SIGIR}, 2020.
-
-\bibitem{zheng2020bert}
-G. Zheng et al., ``BERT-based models for sequence labeling,'' arXiv preprint, 2020.
-
-\bibitem{levy2015event}
-O. Levy et al., ``Event-based abstractive summarization,'' in \textit{Proc. ACL}, 2015.
-
-\end{thebibliography}
 
 \end{document}

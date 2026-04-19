@@ -19,3 +19,12 @@ dist/
 # Misc
 scraped/*.json.bak
 backend/uploads/
+
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
