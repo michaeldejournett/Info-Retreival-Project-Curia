@@ -3,9 +3,12 @@
 
 Prints keyword overlap, date_range agreement, time_range agreement, and latency.
 """
+import argparse
+import json
 import os
 import sys
 import time as _time
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "api"))
@@ -52,6 +55,10 @@ def _fmt_tr(tr):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--save", action="store_true", help="Save results to results/run_TIMESTAMP.json")
+    args = parser.parse_args()
+
     if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GOOGLE_API_KEY"):
         print("ERROR: set GEMINI_API_KEY env var", file=sys.stderr)
         sys.exit(1)
@@ -78,6 +85,7 @@ def main():
     tr_both = 0
     local_lat = []
     gem_lat = []
+    per_query_records = []
 
     for q in QUERIES:
         print("=" * 80)
@@ -130,6 +138,15 @@ def main():
             print(f"    time match:   {l_tr == g_tr}")
         print()
 
+        per_query_records.append({
+            "query": q,
+            "jaccard": j,
+            "date_match": (l_dr == g_dr) if (l_dr is not None and g_dr is not None) else None,
+            "time_match": (l_tr == g_tr) if (l_tr is not None and g_tr is not None) else None,
+            "local_latency_s": round(lt, 4),
+            "gemini_latency_s": round(gt, 4),
+        })
+
     print("=" * 80)
     print("SUMMARY")
     print("=" * 80)
@@ -139,6 +156,31 @@ def main():
     print(f"  time_range agreement:     {tr_matches}/{tr_both} (both non-null)")
     print(f"  local latency  mean:      {sum(local_lat)/len(local_lat):.2f}s")
     print(f"  gemini latency mean:      {sum(gem_lat)/len(gem_lat):.2f}s")
+
+    if args.save:
+        ts = datetime.now()
+        run_id = f"run_{ts.strftime('%Y%m%d_%H%M%S')}"
+        payload = {
+            "run_id": run_id,
+            "timestamp": ts.isoformat(timespec="seconds"),
+            "model_local": os.environ.get("LOCAL_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct"),
+            "model_gemini": DEFAULT_MODEL,
+            "queries": list(QUERIES),
+            "per_query": per_query_records,
+            "summary": {
+                "mean_jaccard": sum(jaccards) / len(jaccards),
+                "date_matches": dr_matches,
+                "date_both_non_null": dr_both,
+                "time_matches": tr_matches,
+                "time_both_non_null": tr_both,
+                "mean_local_latency_s": sum(local_lat) / len(local_lat),
+                "mean_gemini_latency_s": sum(gem_lat) / len(gem_lat),
+            },
+        }
+        Path("results").mkdir(exist_ok=True)
+        out_path = Path("results") / f"{run_id}.json"
+        out_path.write_text(json.dumps(payload, indent=2))
+        print(f"\n  saved → {out_path}", flush=True)
 
 
 if __name__ == "__main__":

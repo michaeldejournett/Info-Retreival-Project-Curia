@@ -10,3 +10,5 @@ sentencepiece>=0.2.0
 safetensors>=0.4.3
 sentence-transformers>=3.0.0,<4.0
 numpy>=1.24.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
