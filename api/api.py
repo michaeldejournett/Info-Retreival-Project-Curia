@@ -17,7 +17,7 @@ from scraper import cross_dedupe, enrich_events, scrape_engage, scrape_rss
 from search import (
     STOP_WORDS,
     base_terms,
-    expand_with_gemini,
+    expand_query,
     extract_date_range,
     filter_by_date,
     filter_by_time,
@@ -36,6 +36,7 @@ EVENTS_FILE = os.environ.get("EVENTS_FILE", "scraped/events.json")
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemma-3-27b-it")
 SCRAPE_INTERVAL = int(os.environ.get("SCRAPE_INTERVAL", "3600"))
 SCRAPE_WORKERS = int(os.environ.get("SCRAPE_WORKERS", "10"))
+USE_LOCAL_MODELS = os.environ.get("USE_LOCAL_MODELS", "false").lower() in ("1", "true", "yes")
 
 _events: List[Dict[str, Any]] = []
 _last_scraped: Optional[datetime] = None
@@ -100,6 +101,20 @@ async def _periodic_scrape() -> None:
 async def lifespan(app: FastAPI):
     # Scrape immediately, then repeat every SCRAPE_INTERVAL seconds.
     # /health returns 503 while _events is empty so Railway retries until ready.
+    if USE_LOCAL_MODELS:
+        from local_models import load_local_models
+        from retrieval import load_retrieval_model
+        loop = asyncio.get_event_loop()
+        ok = await loop.run_in_executor(None, load_local_models)
+        log.info("Local model load: %s", "ok" if ok else "failed (falling back to Gemini)")
+        if ok:
+            from temporal import warmup as temporal_warmup
+            from expansion import warmup as expansion_warmup
+            await loop.run_in_executor(None, temporal_warmup)
+            await loop.run_in_executor(None, expansion_warmup)
+            log.info("Prefix KV caches warmed")
+        await loop.run_in_executor(None, load_retrieval_model)
+        log.info("Retrieval model loaded")
     task = asyncio.create_task(_periodic_scrape())
     yield
     task.cancel()
@@ -160,13 +175,14 @@ def search_events(
     base = base_terms(q)
     terms = list(base)
     llm_used = False
+    backend_used = "none"
 
     log.info("SEARCH query=%r  base_terms=%s", q, base)
 
     llm_date_range = None
     llm_time_range = None
     if not no_llm:
-        llm_keywords, llm_date_range, llm_time_range = expand_with_gemini(q, model)
+        llm_keywords, llm_date_range, llm_time_range, backend_used = expand_query(q, model)
         if llm_keywords:
             llm_keywords = [k for k in llm_keywords if k not in STOP_WORDS and len(k) > 1]
             seen = set(terms)
@@ -177,7 +193,7 @@ def search_events(
                     seen.add(kw)
                     added.append(kw)
             llm_used = True
-            log.info("  LLM expansion  model=%s  added=%s", model, added)
+            log.info("  LLM expansion  backend=%s  added=%s", backend_used, added)
             if llm_date_range:
                 log.info("  LLM date_range %s → %s", llm_date_range[0], llm_date_range[1])
             if llm_time_range:
@@ -212,6 +228,7 @@ def search_events(
             "query": q,
             "terms": [],
             "llm_used": llm_used,
+            "backend": backend_used,
             "date_range": (
                 {"start": str(date_range[0]), "end": str(date_range[1])}
                 if date_range else None
@@ -244,6 +261,7 @@ def search_events(
         "query": q,
         "terms": terms,
         "llm_used": llm_used,
+        "backend": backend_used,
         "date_range": (
             {"start": str(date_range[0]), "end": str(date_range[1])}
             if date_range else None
