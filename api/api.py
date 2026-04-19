@@ -103,9 +103,18 @@ async def lifespan(app: FastAPI):
     # /health returns 503 while _events is empty so Railway retries until ready.
     if USE_LOCAL_MODELS:
         from local_models import load_local_models
+        from retrieval import load_retrieval_model
         loop = asyncio.get_event_loop()
         ok = await loop.run_in_executor(None, load_local_models)
         log.info("Local model load: %s", "ok" if ok else "failed (falling back to Gemini)")
+        if ok:
+            from temporal import warmup as temporal_warmup
+            from expansion import warmup as expansion_warmup
+            await loop.run_in_executor(None, temporal_warmup)
+            await loop.run_in_executor(None, expansion_warmup)
+            log.info("Prefix KV caches warmed")
+        await loop.run_in_executor(None, load_retrieval_model)
+        log.info("Retrieval model loaded")
     task = asyncio.create_task(_periodic_scrape())
     yield
     task.cancel()

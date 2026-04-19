@@ -1,128 +1,124 @@
-"""Loaders for two local models: temporal tagger (Stage 1) and expansion LM (Stage 2)."""
+"""Single-model loader for an instruction-tuned local LM (default: Qwen2.5-0.5B-Instruct)."""
 from __future__ import annotations
 
 import logging
 import os
 import threading
-from typing import Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-TEMPORAL_MODEL_ID = os.getenv("TEMPORAL_MODEL_ID", "satyaalmasian/temporal_tagger_roberta2roberta")
-EXPANSION_MODEL_ID = os.getenv("EXPANSION_MODEL_ID", "google/flan-t5-base")
+LOCAL_MODEL_ID = os.getenv("LOCAL_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
 
-_TEMPORAL_MODEL = None
-_TEMPORAL_TOKENIZER = None
-_EXPANSION_MODEL = None
-_EXPANSION_TOKENIZER = None
-_TEMPORAL_LOCK = threading.Lock()
-_EXPANSION_LOCK = threading.Lock()
+_MODEL = None
+_TOKENIZER = None
+_LOCK = threading.Lock()
 
-
-def _load_temporal() -> bool:
-    global _TEMPORAL_MODEL, _TEMPORAL_TOKENIZER
-    if _TEMPORAL_MODEL is not None:
-        return True
-    try:
-        import torch
-        from transformers import AutoTokenizer, EncoderDecoderModel
-
-        logger.info("Loading temporal tagger %s", TEMPORAL_MODEL_ID)
-        tokenizer = AutoTokenizer.from_pretrained(TEMPORAL_MODEL_ID)
-        model = EncoderDecoderModel.from_pretrained(TEMPORAL_MODEL_ID, torch_dtype=torch.float32)
-        model.eval()
-        _TEMPORAL_TOKENIZER = tokenizer
-        _TEMPORAL_MODEL = model
-        logger.info("Temporal tagger ready")
-        return True
-    except Exception as exc:
-        logger.warning("Failed to load temporal tagger: %s", exc)
-        return False
-
-
-def _load_expansion() -> bool:
-    global _EXPANSION_MODEL, _EXPANSION_TOKENIZER
-    if _EXPANSION_MODEL is not None:
-        return True
-    try:
-        import torch
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-        logger.info("Loading expansion model %s", EXPANSION_MODEL_ID)
-        tokenizer = AutoTokenizer.from_pretrained(EXPANSION_MODEL_ID)
-        model = AutoModelForSeq2SeqLM.from_pretrained(EXPANSION_MODEL_ID, torch_dtype=torch.float32)
-        model.eval()
-        _EXPANSION_TOKENIZER = tokenizer
-        _EXPANSION_MODEL = model
-        logger.info("Expansion model ready")
-        return True
-    except Exception as exc:
-        logger.warning("Failed to load expansion model: %s", exc)
-        return False
+# Per-stage prefix KV caches: label -> (past_key_values, n_prefix_tokens)
+_PREFIX_CACHE: Dict[str, Tuple[Any, int]] = {}
 
 
 def load_local_models() -> bool:
-    """Load both models. Returns True only if both succeed."""
-    ok_t = _load_temporal()
-    ok_e = _load_expansion()
-    return ok_t and ok_e
+    global _MODEL, _TOKENIZER
+    if _MODEL is not None:
+        return True
+    try:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-
-def temporal_loaded() -> bool:
-    return _TEMPORAL_MODEL is not None and _TEMPORAL_TOKENIZER is not None
-
-
-def expansion_loaded() -> bool:
-    return _EXPANSION_MODEL is not None and _EXPANSION_TOKENIZER is not None
+        logger.info("Loading local model %s", LOCAL_MODEL_ID)
+        tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL_ID)
+        try:
+            model = AutoModelForCausalLM.from_pretrained(LOCAL_MODEL_ID, dtype=torch.bfloat16)
+        except Exception:
+            model = AutoModelForCausalLM.from_pretrained(LOCAL_MODEL_ID, dtype=torch.float32)
+        torch.set_num_threads(os.cpu_count() or 4)
+        model.eval()
+        _TOKENIZER = tokenizer
+        _MODEL = model
+        logger.info("Local model ready")
+        return True
+    except Exception as exc:
+        logger.warning("Failed to load local model: %s", exc)
+        return False
 
 
 def is_loaded() -> bool:
-    return temporal_loaded() and expansion_loaded()
+    return _MODEL is not None and _TOKENIZER is not None
 
 
-def generate_temporal(query: str, dct: str, max_new_tokens: int = 256) -> Optional[str]:
-    """Run the temporal tagger. `dct` is the document creation date (YYYY-MM-DD)."""
-    if not temporal_loaded():
+def warmup_prefix_cache(label: str, prefix_messages: List[Dict[str, str]]) -> None:
+    """Pre-compute KV states for the static system+exemplar prefix. Call once after load."""
+    if not is_loaded():
+        return
+    import torch
+    prompt = _TOKENIZER.apply_chat_template(
+        prefix_messages, tokenize=False, add_generation_prompt=False
+    )
+    inputs = _TOKENIZER(prompt, return_tensors="pt")
+    n_tokens = inputs["input_ids"].shape[1]
+    with torch.inference_mode():
+        out = _MODEL(**inputs, use_cache=True)
+    _PREFIX_CACHE[label] = (out.past_key_values, n_tokens)
+    logger.info("Prefix KV cache warmed for '%s' (%d tokens)", label, n_tokens)
+
+
+def _qwen_user_tail(content: str) -> str:
+    """Format a single user turn + generation prompt in Qwen's chat format."""
+    return f"<|im_start|>user\n{content}<|im_end|>\n<|im_start|>assistant\n"
+
+
+def generate_chat(messages: List[Dict[str, str]], max_new_tokens: int = 256) -> Optional[str]:
+    """Run full conversation through the model (no prefix cache). Fallback path."""
+    if not is_loaded():
         return None
     import torch
-
-    input_text = f"date: {dct} text: {query}"
-    with _TEMPORAL_LOCK:
+    with _LOCK:
         try:
-            inputs = _TEMPORAL_TOKENIZER(
-                input_text, return_tensors="pt", truncation=True, max_length=512
+            prompt = _TOKENIZER.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
             )
+            inputs = _TOKENIZER(prompt, return_tensors="pt", truncation=True, max_length=4096)
+            input_len = inputs["input_ids"].shape[1]
             with torch.inference_mode():
-                output_ids = _TEMPORAL_MODEL.generate(
+                output_ids = _MODEL.generate(
                     **inputs,
                     max_new_tokens=max_new_tokens,
                     num_beams=1,
                     do_sample=False,
+                    pad_token_id=_TOKENIZER.eos_token_id,
                 )
-            return _TEMPORAL_TOKENIZER.decode(output_ids[0], skip_special_tokens=True)
+            return _TOKENIZER.decode(output_ids[0][input_len:], skip_special_tokens=True)
         except Exception as exc:
-            logger.warning("Temporal tagger generate failed: %s", exc)
+            logger.warning("generate_chat failed: %s", exc)
             return None
 
 
-def generate_expansion(prompt: str, max_new_tokens: int = 512) -> Optional[str]:
-    if not expansion_loaded():
+def generate_with_prefix(
+    label: str, user_content: str, max_new_tokens: int = 256
+) -> Optional[str]:
+    """Generate using a pre-warmed KV prefix cache + a new user message. Fast path."""
+    if not is_loaded() or label not in _PREFIX_CACHE:
         return None
     import torch
-
-    with _EXPANSION_LOCK:
+    with _LOCK:
         try:
-            inputs = _EXPANSION_TOKENIZER(
-                prompt, return_tensors="pt", truncation=True, max_length=1024
-            )
+            prefix_kv, _ = _PREFIX_CACHE[label]
+            tail = _qwen_user_tail(user_content)
+            tail_ids = _TOKENIZER(
+                tail, return_tensors="pt", add_special_tokens=False
+            )["input_ids"]
             with torch.inference_mode():
-                output_ids = _EXPANSION_MODEL.generate(
-                    **inputs,
+                output_ids = _MODEL.generate(
+                    tail_ids,
+                    past_key_values=prefix_kv,
                     max_new_tokens=max_new_tokens,
                     num_beams=1,
                     do_sample=False,
+                    pad_token_id=_TOKENIZER.eos_token_id,
                 )
-            return _EXPANSION_TOKENIZER.decode(output_ids[0], skip_special_tokens=True)
+            new_tokens = output_ids[0][tail_ids.shape[1]:]
+            return _TOKENIZER.decode(new_tokens, skip_special_tokens=True)
         except Exception as exc:
-            logger.warning("Expansion generate failed: %s", exc)
+            logger.warning("generate_with_prefix failed for '%s': %s", label, exc)
             return None
