@@ -18,6 +18,7 @@ from testing.benchmark.evaluator import summarize_model
 from testing.benchmark.gates import compute_stability_metrics, evaluate_summary, resolve_gate_profile
 from testing.benchmark.model_sets import DEFAULT_MODEL_SET, MODEL_SETS, get_model_set
 from testing.benchmark.reporting import (
+    append_figures_sync_to_summary,
     append_visuals_to_summary,
     create_run_dir,
     write_gate_results_json,
@@ -28,12 +29,13 @@ from testing.benchmark.reporting import (
 )
 from testing.benchmark.retrieval import load_event_corpus, retrieve_ranked_urls
 from testing.benchmark.schemas import ModelInvocationResult, QueryRunResult
-from testing.benchmark.visuals import generate_visual_artifacts
+from testing.benchmark.visuals import generate_visual_artifacts, sync_canonical_figures
 
 
 DEFAULT_SMOKE_DATASET = "testing/benchmark/datasets/queries_smoke.json"
 DEFAULT_REPORTS_DIR = "testing/benchmark/reports"
 DEFAULT_EVENTS_PATH = "scraped/events.json"
+DEFAULT_FIGURES_DIR = "figures"
 
 
 def _parse_models(raw: str) -> List[AdapterConfig]:
@@ -257,10 +259,16 @@ def main() -> int:
 
     visual_artifacts: List[str] = []
     visual_warning = ""
+    synced_figures: List[str] = []
+    figures_sync_warning = ""
     if not args.skip_visuals:
         visual_output = generate_visual_artifacts(run_dir, summaries, model_results)
         visual_artifacts = list(visual_output.get("artifacts") or [])
         visual_warning = str(visual_output.get("warning") or "")
+        if visual_artifacts:
+            sync_output = sync_canonical_figures(visual_artifacts, Path(DEFAULT_FIGURES_DIR))
+            synced_figures = list(sync_output.get("synced") or [])
+            figures_sync_warning = str(sync_output.get("warning") or "")
 
     dataset_version = args.dataset_version or str(dataset_metadata.get("version") or "")
     gate_passed = sum(1 for g in gate_results if g.get("passed"))
@@ -291,6 +299,9 @@ def main() -> int:
         "gate_total_models": len(gate_results),
         "visual_artifact_count": len(visual_artifacts),
         "visual_warning": visual_warning,
+        "figures_sync_dir": DEFAULT_FIGURES_DIR if visual_artifacts else "",
+        "figures_synced_count": len(synced_figures),
+        "figures_sync_warning": figures_sync_warning,
         "case_count": len(cases),
         "event_count": len(events),
     }
@@ -299,6 +310,8 @@ def main() -> int:
     summary_md = write_summary_markdown(run_dir, summaries)
     if visual_artifacts:
         append_visuals_to_summary(summary_md, visual_artifacts)
+    if synced_figures or figures_sync_warning:
+        append_figures_sync_to_summary(summary_md, synced_figures, figures_sync_warning)
 
     gate_json = write_gate_results_json(run_dir, args.gate_profile, gate_results)
     gate_md = write_gate_results_markdown(run_dir, args.gate_profile, gate_results)
@@ -341,8 +354,12 @@ def main() -> int:
     print(f"Gate MD     : {gate_md}")
     if visual_artifacts:
         print(f"Visuals dir : {run_dir / 'visuals'}")
+    if synced_figures:
+        print(f"Figures sync: {DEFAULT_FIGURES_DIR} ({len(synced_figures)} file(s))")
     if visual_warning:
         print(f"Visual note : {visual_warning}")
+    if figures_sync_warning:
+        print(f"Sync note   : {figures_sync_warning}")
     return 0
 
 

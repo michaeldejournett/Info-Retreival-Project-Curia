@@ -1,0 +1,122 @@
+{
+  "metadata": {
+    "name": "curia-branch-compare-seed",
+    "version": "1.0",
+    "label_status": "seed-manual",
+    "notes": "Ported seed queries from compare_backends.py to benchmark dataset format"
+  },
+  "cases": [
+    {
+      "id": "CMP-001",
+      "query": "events two weeks from now",
+      "tags": ["legacy-compare", "date"],
+      "expected": {
+        "keywords": ["events"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Imported from compare_backends baseline query set"
+    },
+    {
+      "id": "CMP-002",
+      "query": "events two weeks from now about data science",
+      "tags": ["legacy-compare", "date", "topic"],
+      "expected": {
+        "keywords": ["events", "data science"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Imported from compare_backends baseline query set"
+    },
+    {
+      "id": "CMP-003",
+      "query": "morning events this week",
+      "tags": ["legacy-compare", "date", "time"],
+      "expected": {
+        "keywords": ["morning", "events"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": "06:00",
+        "time_to": "12:00",
+        "relevant_event_urls": []
+      },
+      "notes": "Relative week plus time-window intent"
+    },
+    {
+      "id": "CMP-004",
+      "query": "pizza on April 25",
+      "tags": ["legacy-compare", "date", "topic"],
+      "expected": {
+        "keywords": ["pizza"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Absolute-date phrasing in natural language"
+    },
+    {
+      "id": "CMP-005",
+      "query": "this weekend concerts",
+      "tags": ["legacy-compare", "date", "topic"],
+      "expected": {
+        "keywords": ["concerts", "music"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Relative weekend interval extraction"
+    },
+    {
+      "id": "CMP-006",
+      "query": "sports games tonight",
+      "tags": ["legacy-compare", "time", "topic"],
+      "expected": {
+        "keywords": ["sports", "games"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": "17:00",
+        "time_to": "21:00",
+        "relevant_event_urls": []
+      },
+      "notes": "Evening time-window extraction case"
+    },
+    {
+      "id": "CMP-007",
+      "query": "art exhibits next month",
+      "tags": ["legacy-compare", "date", "topic"],
+      "expected": {
+        "keywords": ["art", "exhibits"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Relative month window extraction case"
+    },
+    {
+      "id": "CMP-008",
+      "query": "free food thursday",
+      "tags": ["legacy-compare", "date", "topic"],
+      "expected": {
+        "keywords": ["free food"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "Day-of-week anchoring case from compare_backends"
+    }
+  ]
+}

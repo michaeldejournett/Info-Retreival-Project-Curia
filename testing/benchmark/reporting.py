@@ -160,3 +160,32 @@ def append_visuals_to_summary(summary_md_path: Path, visual_artifacts: List[str]
     lines.extend([f"- `{p}`" for p in rel_paths])
     lines.append("")
     summary_md_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def append_figures_sync_to_summary(
+    summary_md_path: Path,
+    synced_paths: List[str],
+    warning: str = "",
+) -> None:
+    if not synced_paths and not warning:
+        return
+
+    existing = summary_md_path.read_text(encoding="utf-8")
+    lines = [
+        existing.rstrip(),
+        "",
+        "## Figures Directory Sync",
+        "",
+    ]
+
+    if synced_paths:
+        lines.append("Synchronized files:")
+        lines.extend([f"- `{Path(p).as_posix()}`" for p in synced_paths])
+
+    if warning:
+        if synced_paths:
+            lines.append("")
+        lines.append(f"Warning: {warning}")
+
+    lines.append("")
+    summary_md_path.write_text("\n".join(lines), encoding="utf-8")

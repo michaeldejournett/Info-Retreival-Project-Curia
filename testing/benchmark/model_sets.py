@@ -5,6 +5,19 @@ from typing import Dict
 
 MODEL_SETS: Dict[str, str] = {
     "baseline": "gemini:gemma-3-27b-it,ollama:llama3:latest",
+    "legacy-compare-mixed": ",".join(
+        [
+            "gemini:gemma-3-27b-it",
+            "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
+            "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
+        ]
+    ),
+    "legacy-compare-local": ",".join(
+        [
+            "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
+            "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
+        ]
+    ),
     "hf-router-chat": ",".join(
         [
             "huggingface:google/gemma-4-31B-it",

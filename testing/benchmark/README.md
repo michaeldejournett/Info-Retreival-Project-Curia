@@ -36,6 +36,14 @@ Run full profile (generates a 100-case template in-memory):
 python -m testing.benchmark.run_benchmark --profile full
 ```
 
+Run the imported branch seed dataset with branch-era model presets:
+
+```bash
+python -m testing.benchmark.run_benchmark \
+  --dataset testing/benchmark/datasets/queries_branch_compare_seed.json \
+  --model-set legacy-compare-mixed
+```
+
 Run the first-pass Hugging Face model slate:
 
 ```bash
@@ -59,6 +67,8 @@ python -m testing.benchmark.run_benchmark \
 ## Model sets
 
 - `baseline`: `gemini:gemma-3-27b-it,ollama:llama3:latest`
+- `legacy-compare-mixed`: `gemini:gemma-3-27b-it,huggingface:Qwen/Qwen2.5-0.5B-Instruct,huggingface:Qwen/Qwen2.5-1.5B-Instruct`
+- `legacy-compare-local`: `huggingface:Qwen/Qwen2.5-0.5B-Instruct,huggingface:Qwen/Qwen2.5-1.5B-Instruct`
 - `hf-router-chat`: `huggingface:google/gemma-4-31B-it,huggingface:Qwen/Qwen3.5-9B,huggingface:CohereLabs/c4ai-command-r7b-12-2024`
 - `hf-local-lite`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0`
 - `hf-first-pass`: `huggingface:MBZUAI/LaMini-Flan-T5-248M,huggingface:google/flan-t5-base,huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0,huggingface:google/gemma-2-2b-it,huggingface:Qwen/Qwen2.5-3B-Instruct,huggingface:microsoft/Phi-3-mini-4k-instruct,huggingface:mistralai/Mistral-7B-Instruct-v0.2`
@@ -83,6 +93,7 @@ Use `--model-set <name>` to run a named set, or `--models` to override with an e
 - `--enforce-label-quality` to validate dataset label completeness and formatting before running.
 - `--expected-label-status <status>` to require dataset metadata label status (for example `approved-manual`).
 - `--skip-visuals` to disable chart generation.
+- Canonical figure generation (`fig1` to `fig5`) requires at least one Gemini model in the run as the baseline comparator. Use `--skip-visuals` for runs that intentionally exclude Gemini.
 
 Write a 100-case labeling template file:
 
@@ -99,6 +110,7 @@ The benchmark now includes larger auto-derived datasets based on `scraped/events
 - `testing/benchmark/datasets/queries_rigorous_retrieval.json` (96 cases)
 - `testing/benchmark/datasets/queries_rigorous_temporal.json` (72 cases)
 - `testing/benchmark/datasets/queries_rigorous_robustness.json` (72 cases)
+- `testing/benchmark/datasets/queries_branch_compare_seed.json` (8 cases, ported from branch compare queries)
 
 Run correctness suite against each dataset:
 
@@ -185,7 +197,13 @@ Each run creates a timestamped folder in `testing/benchmark/reports/`:
 - `summary.md` - quick comparison table
 - `gate_results.json` - pass/fail checks by model for active gate profile
 - `gate_results.md` - human-readable gate summary
-- `visuals/*.png` - static comparison charts (when matplotlib is available)
+- `visuals/*.png` - canonical static charts matching the `figures/` directory naming contract:
+  - `fig1_jaccard.png`
+  - `fig2_temporal.png`
+  - `fig3_latency.png`
+  - `fig4_quality_vs_speed.png`
+  - `fig5_per_query_heatmap.png`
+- `figures/*.png` - latest canonical chart snapshot synchronized from each run
 
 For `--profile full` without a custom dataset, a `generated_full_template.json` is also written into the run directory for manual labeling.
 
