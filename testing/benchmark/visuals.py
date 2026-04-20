@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
-from testing.benchmark.schemas import ModelRunSummary, QueryRunResult
+from testing.benchmark.schemas import ModelInvocationResult, ModelRunSummary, QueryRunResult
 
 
 CANONICAL_FIGURE_FILES: Tuple[str, ...] = (
@@ -73,6 +73,108 @@ def _build_baseline_index(rows: Sequence[QueryRunResult]) -> Dict[Tuple[str, int
     return {_run_key(row): row for row in rows}
 
 
+def _results_overlap_against_baseline(
+    summaries: Sequence[ModelRunSummary],
+    model_results: Dict[str, List[QueryRunResult]],
+    baseline_key: str,
+    top_k: int = 10,
+    date_matched_only: bool = False,
+) -> Tuple[Dict[str, float | None], Dict[str, Dict[Tuple[str, int], float]]]:
+    """Jaccard overlap of retrieved result URLs vs Gemini baseline result URLs.
+
+    date_matched_only=True restricts to queries where the model extracted the same
+    date range as Gemini, isolating keyword search quality from date extraction failure.
+    """
+    baseline_rows = model_results.get(baseline_key) or []
+    baseline_index = _build_baseline_index(baseline_rows)
+
+    mean_scores: Dict[str, float | None] = {}
+    per_query_scores: Dict[str, Dict[Tuple[str, int], float]] = {}
+
+    for summary in summaries:
+        key = _model_key(summary.provider, summary.model_name)
+        rows = model_results.get(key) or []
+
+        if key == baseline_key:
+            mean_scores[key] = 1.0 if rows else None
+            per_query_scores[key] = {_run_key(row): 1.0 for row in rows}
+            continue
+
+        values: List[float] = []
+        item_scores: Dict[Tuple[str, int], float] = {}
+        for row in rows:
+            base = baseline_index.get(_run_key(row))
+            if base is None:
+                continue
+            if date_matched_only:
+                date_match = (
+                    row.invocation.date_from == base.invocation.date_from
+                    and row.invocation.date_to == base.invocation.date_to
+                )
+                if not date_match:
+                    continue
+            model_urls = set(row.predicted_urls[:top_k])
+            base_urls = set(base.predicted_urls[:top_k])
+            score = _jaccard(list(model_urls), list(base_urls))
+            values.append(score)
+            item_scores[_run_key(row)] = score
+
+        mean_scores[key] = (sum(values) / len(values)) if values else None
+        per_query_scores[key] = item_scores
+
+    return mean_scores, per_query_scores
+
+
+def _keyword_only_results_overlap(
+    summaries: Sequence[ModelRunSummary],
+    model_results: Dict[str, List[QueryRunResult]],
+    baseline_key: str,
+    events: List[Dict[str, object]],
+    top_k: int = 10,
+) -> Dict[str, float | None]:
+    """Re-run keyword search without any date filter for both model and baseline,
+    then compare result sets. Isolates keyword quality from date extraction."""
+    from testing.benchmark.search_compat import search  # type: ignore
+
+    baseline_rows = model_results.get(baseline_key) or []
+    baseline_index = _build_baseline_index(baseline_rows)
+
+    # Pre-compute baseline keyword-only URLs per query.
+    base_kw_urls: Dict[Tuple[str, int], List[str]] = {}
+    for row in baseline_rows:
+        kws = row.invocation.keywords
+        if kws:
+            ranked = search(events, kws, top_k)
+            base_kw_urls[_run_key(row)] = [str(e.get("url")) for _, e in ranked if e.get("url")]
+        else:
+            base_kw_urls[_run_key(row)] = []
+
+    mean_scores: Dict[str, float | None] = {}
+    for summary in summaries:
+        key = _model_key(summary.provider, summary.model_name)
+        rows = model_results.get(key) or []
+
+        if key == baseline_key:
+            mean_scores[key] = 1.0 if rows else None
+            continue
+
+        values: List[float] = []
+        for row in rows:
+            rk = _run_key(row)
+            base_urls = set(base_kw_urls.get(rk) or [])
+            kws = row.invocation.keywords
+            if not kws:
+                values.append(0.0)
+                continue
+            ranked = search(events, kws, top_k)
+            model_urls = set(str(e.get("url")) for _, e in ranked if e.get("url"))
+            values.append(_jaccard(list(model_urls), list(base_urls)))
+
+        mean_scores[key] = (sum(values) / len(values)) if values else None
+
+    return mean_scores
+
+
 def _keyword_overlap_against_baseline(
     summaries: Sequence[ModelRunSummary],
     model_results: Dict[str, List[QueryRunResult]],
@@ -128,26 +230,29 @@ def _temporal_agreement_against_baseline(
             continue
 
         numerator = 0
-        denominator = 0
+        # Denominator = all baseline queries that have temporal content, regardless of
+        # whether this model extracted anything. Models that never parse get 0/N.
+        denominator = sum(
+            1
+            for brow in baseline_rows
+            if any((brow.invocation.date_from, brow.invocation.date_to))
+            or any((brow.invocation.time_from, brow.invocation.time_to))
+        )
 
         for row in rows:
             baseline_row = baseline_index.get(_run_key(row))
             if baseline_row is None:
                 continue
 
-            date_pred = (row.invocation.date_from, row.invocation.date_to)
             date_base = (baseline_row.invocation.date_from, baseline_row.invocation.date_to)
-            time_pred = (row.invocation.time_from, row.invocation.time_to)
             time_base = (baseline_row.invocation.time_from, baseline_row.invocation.time_to)
-
-            date_comparable = any(date_pred) and any(date_base)
-            time_comparable = any(time_pred) and any(time_base)
-            if not date_comparable and not time_comparable:
+            if not any(date_base) and not any(time_base):
                 continue
 
-            denominator += 1
-            date_ok = (not date_comparable) or (date_pred == date_base)
-            time_ok = (not time_comparable) or (time_pred == time_base)
+            date_pred = (row.invocation.date_from, row.invocation.date_to)
+            time_pred = (row.invocation.time_from, row.invocation.time_to)
+            date_ok = date_pred == date_base
+            time_ok = time_pred == time_base
             if date_ok and time_ok:
                 numerator += 1
 
@@ -207,6 +312,7 @@ def generate_visual_artifacts(
     run_dir: Path,
     summaries: Sequence[ModelRunSummary],
     model_results: Dict[str, List[QueryRunResult]],
+    events: Optional[List[Dict[str, object]]] = None,
 ) -> Dict[str, object]:
     plt = _plot_dependency_available()
     if plt is None:
@@ -224,14 +330,33 @@ def generate_visual_artifacts(
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts: List[str] = []
 
-    model_keys = [_model_key(s.provider, s.model_name) for s in summaries]
-    model_labels = {_model_key(s.provider, s.model_name): _display_label(s) for s in summaries}
-    color_map = {key: ("#2ecc71" if key == baseline_key else "#e67e22") for key in model_keys}
+    # Canonical order: best top3_hit_rate first (Gemini → strongest local → weakest).
+    # Used consistently across all figures so the reader can track each model by color.
+    import numpy as np  # type: ignore
+    summaries_sorted = sorted(summaries, key=lambda s: s.top3_hit_rate, reverse=True)
+    model_keys = [_model_key(s.provider, s.model_name) for s in summaries_sorted]
+    model_labels = {_model_key(s.provider, s.model_name): _display_label(s) for s in summaries_sorted}
 
-    mean_jaccard, per_query_jaccard = _keyword_overlap_against_baseline(
+    # Gradient palette: plasma colormap from best (bright yellow) to worst (dark purple).
+    cmap = plt.get_cmap("plasma")
+    n = len(model_keys)
+    gradient_colors = [cmap(0.85 - 0.65 * i / max(n - 1, 1)) for i in range(n)]
+    color_map = {key: gradient_colors[i] for i, key in enumerate(model_keys)}
+
+    # Result overlap restricted to date-matched queries — isolates keyword search quality.
+    mean_jaccard, per_query_jaccard = _results_overlap_against_baseline(
         summaries=summaries,
         model_results=model_results,
         baseline_key=baseline_key,
+        date_matched_only=True,
+    )
+
+    # End-to-end result overlap across all queries (used in fig4/fig5).
+    mean_jaccard_all, _ = _results_overlap_against_baseline(
+        summaries=summaries,
+        model_results=model_results,
+        baseline_key=baseline_key,
+        date_matched_only=False,
     )
 
     temporal_agreement = _temporal_agreement_against_baseline(
@@ -240,73 +365,75 @@ def generate_visual_artifacts(
         baseline_key=baseline_key,
     )
 
-    # fig1_jaccard.png
-    fig1_keys = [key for key in model_keys if mean_jaccard.get(key) is not None]
-    if not fig1_keys:
-        raise ValueError("No comparable keyword outputs were available for fig1_jaccard.png generation")
-
-    fig1_values = [float(mean_jaccard[key]) for key in fig1_keys]
+    # fig1_jaccard.png — Temporal / date extraction accuracy.
+    fig1_keys = model_keys
+    fig1_values = []
+    fig1_labels = []
+    for key in fig1_keys:
+        numerator, denominator = temporal_agreement[key]
+        fig1_values.append((numerator / denominator) if denominator > 0 else 0.0)
+        fig1_labels.append(f"{numerator}/{denominator}")
     fig1_colors = [color_map[key] for key in fig1_keys]
     fig1_x = list(range(len(fig1_keys)))
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(max(10, 2 * len(fig1_keys)), 6))
     bars = ax.bar(fig1_x, fig1_values, color=fig1_colors, edgecolor="black", linewidth=1.2)
-    ax.axhline(y=1.0, color="red", linestyle="--", linewidth=2, alpha=0.7, label="Gemini baseline")
     ax.set_xticks(fig1_x)
-    ax.set_xticklabels([model_labels[key] for key in fig1_keys], fontsize=10)
-    ax.set_ylabel("Mean KW Jaccard", fontsize=11, fontweight="bold")
+    ax.set_xticklabels(
+        [model_labels[key] for key in fig1_keys],
+        fontsize=9, rotation=30, ha="right", rotation_mode="anchor",
+    )
+    fig.subplots_adjust(bottom=0.28)
+    ax.set_ylabel("Fraction of Queries Correct", fontsize=11, fontweight="bold")
     ax.set_ylim([0, 1.15])
-    ax.legend(loc="upper right", fontsize=10)
-    ax.set_title("Keyword Expansion Overlap vs Gemini Baseline", fontsize=12, fontweight="bold", pad=15)
+    ax.set_title("Date / Time Extraction Accuracy vs Gemini Baseline", fontsize=12, fontweight="bold", pad=15)
     ax.grid(axis="y", alpha=0.3)
-
-    for bar, value in zip(bars, fig1_values):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.02,
-            f"{value:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=10,
-            fontweight="bold",
-        )
+    for bar, lbl in zip(bars, fig1_labels):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
+                lbl, ha="center", va="bottom", fontsize=9, fontweight="bold")
 
     _sync_visual(plt, output_dir / "fig1_jaccard.png", artifacts)
 
-    # fig2_temporal.png
-    fig2_keys = [key for key in model_keys if temporal_agreement.get(key, (0, 0))[1] > 0]
-    if not fig2_keys:
-        raise ValueError("No comparable temporal outputs were available for fig2_temporal.png generation")
-
-    fig2_values = []
-    fig2_labels = []
-    fig2_colors = []
-    for key in fig2_keys:
-        numerator, denominator = temporal_agreement[key]
-        fig2_values.append((numerator / denominator) if denominator > 0 else 0.0)
-        fig2_labels.append(f"{numerator}/{denominator}")
-        fig2_colors.append(color_map[key])
-
-    fig2_x = list(range(len(fig2_keys)))
-    fig, ax = plt.subplots(figsize=(10, 5))
-    bars = ax.bar(fig2_x, fig2_values, color=fig2_colors, edgecolor="black", linewidth=1.2)
-    ax.set_xticks(fig2_x)
-    ax.set_xticklabels([model_labels[key] for key in fig2_keys], fontsize=10)
-    ax.set_ylabel("Temporal Accuracy (fraction)", fontsize=11, fontweight="bold")
-    ax.set_ylim([0, 1.15])
-    ax.set_title("Temporal Extraction Accuracy", fontsize=12, fontweight="bold", pad=15)
-    ax.grid(axis="y", alpha=0.3)
-
-    for bar, fraction_label in zip(bars, fig2_labels):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.02,
-            fraction_label,
-            ha="center",
-            va="bottom",
-            fontsize=10,
-            fontweight="bold",
+    # fig2_temporal.png — Keyword search quality: re-run keyword-only search (no date
+    # filter) for both model and Gemini, then compare result sets. This purely reflects
+    # whether the extracted keywords retrieve the same events, independent of dates.
+    if events:
+        kw_only_scores = _keyword_only_results_overlap(
+            summaries=summaries,
+            model_results=model_results,
+            baseline_key=baseline_key,
+            events=events,
         )
+        fig2_subtitle = "Keyword-only search (no date filter), top-10 results"
+    else:
+        kw_only_scores = mean_jaccard
+        fig2_subtitle = "Date-correct queries only (events corpus unavailable)"
+
+    fig2_keys = [key for key in model_keys if kw_only_scores.get(key) is not None]
+    if not fig2_keys:
+        raise ValueError("No comparable result outputs were available for fig2_temporal.png generation")
+
+    fig2_values = [float(kw_only_scores[key]) for key in fig2_keys]
+    fig2_colors = [color_map[key] for key in fig2_keys]
+    fig2_x = list(range(len(fig2_keys)))
+
+    fig, ax = plt.subplots(figsize=(max(10, 2 * len(fig2_keys)), 6))
+    bars = ax.bar(fig2_x, fig2_values, color=fig2_colors, edgecolor="black", linewidth=1.2)
+    ax.axhline(y=1.0, color="red", linestyle="--", linewidth=2, alpha=0.7, label="Gemini baseline")
+    ax.set_xticks(fig2_x)
+    ax.set_xticklabels(
+        [model_labels[key] for key in fig2_keys],
+        fontsize=9, rotation=30, ha="right", rotation_mode="anchor",
+    )
+    fig.subplots_adjust(bottom=0.28)
+    ax.set_ylabel("Mean Result Overlap (top-10)", fontsize=11, fontweight="bold")
+    ax.set_ylim([0, 1.15])
+    ax.legend(loc="upper right", fontsize=10)
+    ax.set_title(f"Keyword Search Quality\n{fig2_subtitle}", fontsize=12, fontweight="bold", pad=15)
+    ax.grid(axis="y", alpha=0.3)
+    for bar, val in zip(bars, fig2_values):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
+                f"{val:.2f}", ha="center", va="bottom", fontsize=9, fontweight="bold")
 
     _sync_visual(plt, output_dir / "fig2_temporal.png", artifacts)
 
@@ -314,7 +441,7 @@ def generate_visual_artifacts(
     latency_values = {
         _model_key(s.provider, s.model_name): max(s.latency_mean_ms / 1000.0, 0.001) for s in summaries
     }
-    fig3_keys = [key for key in model_keys if key in latency_values]
+    fig3_keys = list(reversed([key for key in model_keys if key in latency_values]))
     fig3_vals = [latency_values[key] for key in fig3_keys]
     fig3_colors = [color_map[key] for key in fig3_keys]
 
@@ -342,82 +469,80 @@ def generate_visual_artifacts(
 
     _sync_visual(plt, output_dir / "fig3_latency.png", artifacts)
 
-    # fig4_quality_vs_speed.png
-    fig4_keys = fig1_keys
-    fig4_x = [latency_values[key] for key in fig4_keys]
-    fig4_y = [_safe_metric(mean_jaccard.get(key), fallback=0.0) for key in fig4_keys]
-    fig4_sizes = [1800.0 if key == baseline_key else 350.0 for key in fig4_keys]
-    fig4_colors = [color_map[key] for key in fig4_keys]
-
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.scatter(fig4_x, fig4_y, s=fig4_sizes, c=fig4_colors, alpha=0.75, edgecolors="black", linewidth=1.5)
-
-    for xval, yval, key in zip(fig4_x, fig4_y, fig4_keys):
-        label = model_labels[key].split("\n", 1)[0]
-        ax.annotate(label, xy=(xval, yval), xytext=(5, 5), textcoords="offset points", fontsize=9, fontweight="bold")
-
-    ax.set_xscale("log")
-    ax.set_xlabel("Latency (seconds, log scale)", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Keyword Jaccard", fontsize=11, fontweight="bold")
-    ax.set_xlim([0.01, max(300.0, max(fig4_x) * 1.8)])
-    ax.set_ylim([-0.05, 1.15])
-    ax.grid(True, alpha=0.3)
-    ax.set_title("Quality vs Speed Trade-off", fontsize=12, fontweight="bold", pad=15)
-    ax.text(
-        0.015,
-        1.08,
-        "Fast + Accurate\n(ideal region)",
-        fontsize=9,
-        style="italic",
-        bbox={"boxstyle": "round,pad=0.5", "facecolor": "yellow", "alpha": 0.3},
+    # fig4_quality_vs_speed.png — dual-axis bar chart: result overlap (bars) + latency (line)
+    # Sort models by result overlap descending so the ranking is immediately legible.
+    fig4_keys_sorted = sorted(
+        fig1_keys,
+        key=lambda k: _safe_metric(mean_jaccard_all.get(k), fallback=0.0),
+        reverse=True,
     )
+    fig4_overlap = [_safe_metric(mean_jaccard_all.get(k), fallback=0.0) for k in fig4_keys_sorted]
+    fig4_latency = [latency_values[k] for k in fig4_keys_sorted]  # already in seconds
+    fig4_colors_sorted = [color_map[k] for k in fig4_keys_sorted]
+    fig4_xlabels = [model_labels[k].split("\n", 1)[0] for k in fig4_keys_sorted]
+    fig4_x_pos = list(range(len(fig4_keys_sorted)))
+
+    fig, ax1 = plt.subplots(figsize=(max(10, 2 * len(fig4_keys_sorted)), 6))
+    bars = ax1.bar(fig4_x_pos, fig4_overlap, color=fig4_colors_sorted, edgecolor="black", linewidth=1.2, zorder=2)
+    ax1.set_ylabel("Result Overlap vs Gemini", fontsize=11, fontweight="bold", color="black")
+    ax1.set_ylim([0, 1.25])
+    ax1.set_xticks(fig4_x_pos)
+    ax1.set_xticklabels(fig4_xlabels, fontsize=9, rotation=30, ha="right", rotation_mode="anchor")
+    ax1.grid(axis="y", alpha=0.3, zorder=1)
+
+    for bar, val in zip(bars, fig4_overlap):
+        ax1.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.02,
+            f"{val:.2f}",
+            ha="center", va="bottom", fontsize=9, fontweight="bold",
+        )
+
+    ax2 = ax1.twinx()
+    ax2.plot(fig4_x_pos, fig4_latency, color="#2980b9", marker="D", linewidth=2,
+             markersize=7, label="Latency (s)", zorder=3)
+    for xp, lat in zip(fig4_x_pos, fig4_latency):
+        ax2.text(xp, lat + max(fig4_latency) * 0.04, f"{lat:.1f}s",
+                 ha="center", va="bottom", fontsize=8, color="#2980b9", fontweight="bold")
+    ax2.set_ylabel("Latency p50 (seconds)", fontsize=11, fontweight="bold", color="#2980b9")
+    ax2.tick_params(axis="y", labelcolor="#2980b9")
+    ax2.set_ylim([0, max(fig4_latency) * 1.35])
+    ax2.legend(loc="upper right", fontsize=9)
+
+    fig.subplots_adjust(bottom=0.28)
+    ax1.set_title("Quality vs Speed Trade-off", fontsize=12, fontweight="bold", pad=15)
 
     _sync_visual(plt, output_dir / "fig4_quality_vs_speed.png", artifacts)
 
-    # fig5_per_query_heatmap.png
-    baseline_rows = model_results.get(baseline_key) or []
-    if not baseline_rows:
-        raise ValueError("Cannot generate fig5_per_query_heatmap.png because Gemini baseline has no query rows")
+    # fig5_per_query_heatmap.png — average Jaccard per model across all queries.
+    avg_values: List[float] = []
+    for model_key in model_keys:
+        scores = list(per_query_jaccard.get(model_key, {}).values())
+        avg_values.append(sum(scores) / len(scores) if scores else 0.0)
 
-    query_keys: List[Tuple[str, int]] = []
-    query_labels: List[str] = []
-    seen: set[Tuple[str, int]] = set()
-    include_run_index = len({key[1] for key in (_run_key(row) for row in baseline_rows)}) > 1
-    for row in baseline_rows:
-        key = _run_key(row)
-        if key in seen:
-            continue
-        seen.add(key)
-        query_keys.append(key)
-        label = row.case.query
-        if include_run_index:
-            label = f"{label} [run {key[1] + 1}]"
-        query_labels.append(label)
-
-    heatmap_matrix: List[List[float]] = []
-    for qkey in query_keys:
-        row_values: List[float] = []
-        for model_key in model_keys:
-            score = per_query_jaccard.get(model_key, {}).get(qkey)
-            row_values.append(_safe_metric(score, fallback=0.0))
-        heatmap_matrix.append(row_values)
-
-    fig, ax = plt.subplots(figsize=(max(8, 4 + len(model_keys)), max(6, 0.6 * len(query_labels))))
-    image = ax.imshow(heatmap_matrix, cmap="RdYlGn", vmin=0.0, vmax=1.0, aspect="auto")
+    fig, ax = plt.subplots(figsize=(max(8, 4 + len(model_keys)), 5))
+    image = ax.imshow(
+        [avg_values], cmap="RdYlGn", vmin=0.0, vmax=1.0, aspect="auto"
+    )
     ax.set_xticks(range(len(model_keys)))
-    ax.set_xticklabels([model_labels[key].replace("\n", " ") for key in model_keys], rotation=30, ha="right")
-    ax.set_yticks(range(len(query_labels)))
-    ax.set_yticklabels(query_labels)
-    ax.set_title("Per-Query Keyword Jaccard Across Models", fontsize=12, fontweight="bold", pad=15)
+    ax.set_xticklabels(
+        [model_labels[key].replace("\n", " ") for key in model_keys],
+        rotation=30, ha="right", fontsize=10,
+    )
+    ax.set_yticks([0])
+    ax.set_yticklabels(["Avg Result Overlap"], fontsize=11, fontweight="bold")
+    ax.set_title("Average Search Result Overlap vs Gemini Baseline", fontsize=12, fontweight="bold", pad=15)
     ax.set_xlabel("Model", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Query", fontsize=11, fontweight="bold")
+    # Make the single row visually thick by fixing cell height via axes position.
+    fig.subplots_adjust(top=0.82, bottom=0.32, left=0.12, right=0.88)
 
-    for i, row_values in enumerate(heatmap_matrix):
-        for j, value in enumerate(row_values):
-            ax.text(j, i, f"{value:.2f}", ha="center", va="center", fontsize=8)
+    for j, value in enumerate(avg_values):
+        ax.text(j, 0, f"{value:.2f}", ha="center", va="center", fontsize=13, fontweight="bold")
 
-    cbar = fig.colorbar(image, ax=ax)
-    cbar.set_label("Jaccard")
+    cbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Result Overlap", fontsize=10, fontweight="bold")
+    cbar.set_ticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    cbar.ax.tick_params(labelsize=9)
     _sync_visual(plt, output_dir / "fig5_per_query_heatmap.png", artifacts)
 
     return {"artifacts": artifacts, "warning": ""}

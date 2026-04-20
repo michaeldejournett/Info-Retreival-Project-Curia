@@ -194,6 +194,13 @@ def parse_json_object(text: str) -> Tuple[Optional[Dict[str, Any]], Optional[str
     candidates: List[str] = [cleaned]
     candidates.extend(_extract_fenced_candidates(text))
     candidates.extend(_extract_braced_candidates(cleaned))
+    # If the text looks like an unclosed JSON object (model stopped before final }),
+    # try closing it — common with small models that hit max_tokens mid-output.
+    stripped = cleaned.strip().rstrip("`'\"")
+    if stripped.startswith("{") and not stripped.endswith("}"):
+        depth = sum(1 if c == "{" else -1 if c == "}" else 0 for c in stripped)
+        if depth > 0:
+            candidates.append(stripped + "}" * depth)
 
     best_obj: Optional[Dict[str, Any]] = None
     best_score = -10_000

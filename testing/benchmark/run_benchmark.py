@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
 from testing.benchmark.adapters.base import AdapterConfig, build_adapter
 from testing.benchmark.dataset import (
@@ -24,6 +26,7 @@ from testing.benchmark.reporting import (
     write_gate_results_json,
     write_gate_results_markdown,
     write_per_query_csv,
+    write_per_query_json,
     write_summary_json,
     write_summary_markdown,
 )
@@ -183,6 +186,22 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional path to write a generated dataset template and continue",
     )
+    parser.add_argument(
+        "--max-parallel-models",
+        type=int,
+        default=4,
+        help=(
+            "Maximum concurrent-safe models to run in parallel (network-bound adapters). "
+            "Models that declare is_concurrent_safe=False (e.g. local HuggingFace) always "
+            "run serially after the concurrent batch. Set to 1 for fully sequential behavior."
+        ),
+    )
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=10,
+        help="Emit a per-model progress line every N completed cases",
+    )
     return parser
 
 
@@ -219,7 +238,13 @@ def main() -> int:
     summaries = []
     gate_results = []
 
-    for cfg in model_configs:
+    print_lock = threading.Lock()
+
+    def _emit(message: str) -> None:
+        with print_lock:
+            print(message, flush=True)
+
+    def _run_model(cfg: AdapterConfig) -> Tuple[str, List[QueryRunResult], Any, Any]:
         cfg.timeout_s = args.timeout_s
         cfg.temperature = args.temperature
         cfg.max_tokens = args.max_tokens
@@ -228,9 +253,10 @@ def main() -> int:
         model_key = f"{cfg.provider}:{cfg.model_name}"
         rows: List[QueryRunResult] = []
 
-        print(f"Running {model_key} on {len(cases)} cases x {args.runs_per_query} run(s) each")
+        _emit(f"Running {model_key} on {len(cases)} cases x {args.runs_per_query} run(s) each")
 
-        for case in cases:
+        progress_every = max(1, args.progress_every)
+        for case_idx, case in enumerate(cases, start=1):
             for run_idx in range(args.runs_per_query):
                 inv: ModelInvocationResult = adapter.extract(case.query)
                 inv.metadata["run_index"] = run_idx
@@ -241,7 +267,9 @@ def main() -> int:
                 if args.inter_query_delay_ms > 0:
                     time.sleep(args.inter_query_delay_ms / 1000.0)
 
-        model_results[model_key] = rows
+            if case_idx % progress_every == 0 or case_idx == len(cases):
+                _emit(f"  [{model_key}] {case_idx}/{len(cases)} cases done")
+
         summary = summarize_model(rows)
         if args.runs_per_query > 1:
             summary.details.update(compute_stability_metrics(rows))
@@ -254,8 +282,60 @@ def main() -> int:
                     "latency_p95_stddev_ms": None,
                 }
             )
+        gate_result = evaluate_summary(summary, gate_profile)
+        _emit(f"✓ {model_key} complete")
+        return model_key, rows, summary, gate_result
+
+    # Partition by concurrency safety (build adapters once to query is_concurrent_safe).
+    concurrent_cfgs: List[AdapterConfig] = []
+    serial_cfgs: List[AdapterConfig] = []
+    for cfg in model_configs:
+        probe_adapter = build_adapter(cfg)
+        if probe_adapter.is_concurrent_safe:
+            concurrent_cfgs.append(cfg)
+        else:
+            serial_cfgs.append(cfg)
+
+    # Stable ordering for results: concurrent results in submission order, then serial.
+    ordered_keys: List[str] = []
+    pending_results: Dict[str, Tuple[List[QueryRunResult], Any, Any]] = {}
+
+    if concurrent_cfgs:
+        max_workers = max(1, min(args.max_parallel_models, len(concurrent_cfgs)))
+        _emit(
+            f"Dispatching {len(concurrent_cfgs)} concurrent-safe model(s) "
+            f"with max_workers={max_workers}"
+        )
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_to_key = {}
+            for cfg in concurrent_cfgs:
+                key = f"{cfg.provider}:{cfg.model_name}"
+                ordered_keys.append(key)
+                future_to_key[pool.submit(_run_model, cfg)] = key
+            for future in as_completed(future_to_key):
+                key, rows, summary, gate_result = future.result()
+                pending_results[key] = (rows, summary, gate_result)
+
+    if serial_cfgs:
+        _emit(f"Running {len(serial_cfgs)} serial-only model(s) sequentially")
+        for cfg in serial_cfgs:
+            key, rows, summary, gate_result = _run_model(cfg)
+            ordered_keys.append(key)
+            pending_results[key] = (rows, summary, gate_result)
+
+    for key in ordered_keys:
+        rows, summary, gate_result = pending_results[key]
+        model_results[key] = rows
         summaries.append(summary)
-        gate_results.append(evaluate_summary(summary, gate_profile))
+        gate_results.append(gate_result)
+
+    dataset_version = args.dataset_version or str(dataset_metadata.get("version") or "")
+    gate_passed = sum(1 for g in gate_results if g.get("passed"))
+
+    # Write data files first so results are preserved even if visual generation fails.
+    per_query_csv = write_per_query_csv(run_dir, model_results)
+    per_query_json = write_per_query_json(run_dir, model_results)
+    summary_md = write_summary_markdown(run_dir, summaries)
 
     visual_artifacts: List[str] = []
     visual_warning = ""
@@ -269,9 +349,6 @@ def main() -> int:
             sync_output = sync_canonical_figures(visual_artifacts, Path(DEFAULT_FIGURES_DIR))
             synced_figures = list(sync_output.get("synced") or [])
             figures_sync_warning = str(sync_output.get("warning") or "")
-
-    dataset_version = args.dataset_version or str(dataset_metadata.get("version") or "")
-    gate_passed = sum(1 for g in gate_results if g.get("passed"))
 
     run_meta = {
         "suite": args.suite,
@@ -306,8 +383,6 @@ def main() -> int:
         "event_count": len(events),
     }
 
-    per_query_csv = write_per_query_csv(run_dir, model_results)
-    summary_md = write_summary_markdown(run_dir, summaries)
     if visual_artifacts:
         append_visuals_to_summary(summary_md, visual_artifacts)
     if synced_figures or figures_sync_warning:

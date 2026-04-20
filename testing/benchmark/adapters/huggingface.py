@@ -14,9 +14,35 @@ except Exception:  # pragma: no cover - dependency/environment specific
 
 from testing.benchmark.env_loader import load_project_env_once
 from testing.benchmark.normalize import normalize_from_model_json, parse_json_object
+from testing.benchmark.prompts import build_compact_prompt, build_seq2seq_prompt
 from testing.benchmark.schemas import ModelInvocationResult
 
 from .base import BaseModelAdapter
+
+
+def _make_json_closed_criteria(tokenizer, input_len: int):
+    """Return a StoppingCriteria instance that halts when the output contains a closed JSON object."""
+    try:
+        from transformers import StoppingCriteria, StoppingCriteriaList
+
+        class _JsonClosedCriteria(StoppingCriteria):
+            def __call__(self, input_ids, scores, **kwargs):
+                generated = input_ids[0][input_len:]
+                text = tokenizer.decode(generated, skip_special_tokens=True)
+                depth, seen_open = 0, False
+                for ch in text:
+                    if ch == "{":
+                        depth += 1
+                        seen_open = True
+                    elif ch == "}":
+                        depth -= 1
+                        if seen_open and depth <= 0:
+                            return True
+                return False
+
+        return StoppingCriteriaList([_JsonClosedCriteria()])
+    except ImportError:
+        return None
 
 
 @dataclass
@@ -177,6 +203,33 @@ class HuggingFaceAdapter(BaseModelAdapter):
         self._local_runtime: Optional[_LocalRuntime] = None
         self._local_runtime_error: Optional[str] = None
 
+    def _build_local_prompt(self, query: str, is_encoder_decoder: bool) -> str:
+        # Explicit override wins.
+        if self.config.prompt_template:
+            return self.config.prompt_template.format(query=query)
+        # Encoder-decoder models (flan-t5, LaMini) need a fill-in style prompt.
+        if is_encoder_decoder:
+            return build_seq2seq_prompt(query)
+        # Small decoder models (<2B) use the compact prompt to avoid prompt-echo.
+        name_lower = self.model_name.lower()
+        is_small = any(tag in name_lower for tag in ("0.5b", "1b", "1.1b", "1.5b", "248m", "tinyllama", "lamini"))
+        if is_small:
+            return build_compact_prompt(query)
+        return self.build_prompt(query)
+
+    def _is_raw_completion_model(self) -> bool:
+        """TinyLlama's chat template wraps prompts in a conversational context that
+        causes it to ignore JSON instructions entirely. Bypass the template and use
+        raw completion for it. Qwen models work correctly with their chat template."""
+        return "tinyllama" in self.model_name.lower()
+
+    @property
+    def is_concurrent_safe(self) -> bool:
+        # Local backend loads weights into a single GPU/CPU runtime; running two
+        # of them in parallel causes VRAM contention or thread-unsafe model state.
+        # The HF inference API is network-bound and safe to parallelize.
+        return _resolve_backend() != "local"
+
     def _load_local_runtime(self) -> _LocalRuntime:
         if self._local_runtime is not None:
             return self._local_runtime
@@ -246,7 +299,7 @@ class HuggingFaceAdapter(BaseModelAdapter):
                 latency_ms=(time.perf_counter() - started) * 1000,
             )
 
-        prompt = self.build_prompt(query)
+        prompt = self._build_local_prompt(query, runtime.is_encoder_decoder)
         raw_text = ""
 
         try:
@@ -254,17 +307,35 @@ class HuggingFaceAdapter(BaseModelAdapter):
             model = runtime.model
             torch = runtime.torch_module
 
-            encoded = tokenizer(prompt, return_tensors="pt", truncation=True)
+            use_chat_template = (
+                not runtime.is_encoder_decoder
+                and not self._is_raw_completion_model()
+                and getattr(tokenizer, "chat_template", None)
+            )
+            if use_chat_template:
+                messages = [{"role": "user", "content": prompt}]
+                formatted = tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+                encoded = tokenizer(formatted, return_tensors="pt", truncation=True)
+            else:
+                encoded = tokenizer(prompt, return_tensors="pt", truncation=True)
             encoded = {k: v.to(runtime.device) for k, v in encoded.items()}
 
+            input_len = int(encoded["input_ids"].shape[-1])
+            stopping_criteria = _make_json_closed_criteria(tokenizer, input_len)
+
             generate_kwargs: Dict[str, Any] = {
-                "max_new_tokens": max(32, min(self.config.max_tokens, 1024)),
+                "max_new_tokens": max(64, self.config.max_tokens),
                 "do_sample": self.config.temperature > 0.0,
+                "repetition_penalty": 1.3,
             }
             if self.config.temperature > 0.0:
                 generate_kwargs["temperature"] = max(0.01, self.config.temperature)
             if tokenizer.pad_token_id is not None:
                 generate_kwargs["pad_token_id"] = tokenizer.pad_token_id
+            if stopping_criteria is not None:
+                generate_kwargs["stopping_criteria"] = stopping_criteria
 
             with torch.no_grad():
                 output_ids = model.generate(**encoded, **generate_kwargs)

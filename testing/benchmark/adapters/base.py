@@ -15,9 +15,12 @@ class AdapterConfig:
     temperature: float = 0.0
     max_tokens: int = 1200
     metadata: Optional[Dict[str, str]] = None
+    prompt_template: Optional[str] = None
 
 
 class BaseModelAdapter(ABC):
+    is_concurrent_safe: bool = True
+
     def __init__(self, config: AdapterConfig):
         self.config = config
 

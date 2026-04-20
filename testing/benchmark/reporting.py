@@ -7,7 +7,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List
 
-from testing.benchmark.schemas import ModelRunSummary, QueryRunResult
+from testing.benchmark.schemas import (
+    BenchmarkCase,
+    ExpectedLabels,
+    ModelInvocationResult,
+    ModelRunSummary,
+    QueryRunResult,
+)
 
 
 def create_run_dir(base_dir: str) -> Path:
@@ -85,6 +91,48 @@ def write_per_query_csv(path: Path, model_results: Dict[str, List[QueryRunResult
                     "|".join(exp.relevant_event_urls),
                 ])
     return out
+
+
+def write_per_query_json(path: Path, model_results: Dict[str, List[QueryRunResult]]) -> Path:
+    out = path / "per_query.json"
+    payload = {
+        model_key: [asdict(row) for row in rows]
+        for model_key, rows in model_results.items()
+    }
+    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return out
+
+
+def load_per_query_json(path: Path) -> Dict[str, List[QueryRunResult]]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    results: Dict[str, List[QueryRunResult]] = {}
+    for model_key, rows in raw.items():
+        rebuilt: List[QueryRunResult] = []
+        for row in rows:
+            case_dict = row["case"]
+            expected_dict = case_dict.get("expected") or {}
+            case = BenchmarkCase(
+                case_id=case_dict["case_id"],
+                query=case_dict["query"],
+                tags=list(case_dict.get("tags") or []),
+                expected=ExpectedLabels(**expected_dict) if expected_dict else ExpectedLabels(),
+                notes=case_dict.get("notes", ""),
+            )
+            invocation = ModelInvocationResult(**row["invocation"])
+            rebuilt.append(
+                QueryRunResult(
+                    case=case,
+                    invocation=invocation,
+                    predicted_urls=list(row.get("predicted_urls") or []),
+                )
+            )
+        results[model_key] = rebuilt
+    return results
+
+
+def load_summary_json(path: Path) -> List[ModelRunSummary]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return [ModelRunSummary(**s) for s in raw.get("summaries") or []]
 
 
 def write_summary_markdown(path: Path, summaries: Iterable[ModelRunSummary]) -> Path:
