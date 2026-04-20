@@ -16,12 +16,12 @@ import seaborn as sns
 import numpy as np
 
 HISTORICAL_DATA = [
-    {"short": "Gemini",     "label": "Gemini\n(gemma-3-27b-it)",        "params_B": 27.0,  "jaccard": 1.0,  "temporal_n": 8, "temporal_d": 8,  "latency_s": 7.8,   "status": "active"},
-    {"short": "Qwen-0.5B",  "label": "Qwen2.5-0.5B\n(local default)",   "params_B": 0.5,   "jaccard": 0.00, "temporal_n": None,"temporal_d": 8, "latency_s": 3.2,   "status": "active"},
-    {"short": "Qwen-1.5B",  "label": "Qwen2.5-1.5B\n(tested, not deployed)","params_B": 1.5, "jaccard": 0.18, "temporal_n": 3, "temporal_d": 7,  "latency_s": 129.0, "status": "tested"},
-    {"short": "flan-t5",    "label": "flan-t5-base\n(abandoned)",        "params_B": 0.25,  "jaccard": 0.00, "temporal_n": None,"temporal_d": None,"latency_s": None,"status": "abandoned"},
-    {"short": "t-tagger",   "label": "temporal_tagger\n(abandoned)",     "params_B": 0.25,  "jaccard": None, "temporal_n": 0, "temporal_d": 8,  "latency_s": None,  "status": "abandoned"},
-    {"short": "MiniLM",     "label": "all-MiniLM-L6-v2\n(hybrid)",       "params_B": 0.022, "jaccard": None, "temporal_n": None,"temporal_d": None,"latency_s": 0.05,"status": "active"},
+    {"short": "Gemini",     "label": "gemma-3-27b-it",        "params_B": 27.0,  "jaccard": 1.0,  "temporal_n": 8, "temporal_d": 8,  "latency_s": 7.8,   "status": "active"},
+    {"short": "Qwen-0.5B",  "label": "Qwen2.5-0.5B-Instruct", "params_B": 0.5,   "jaccard": 0.00, "temporal_n": None,"temporal_d": 8, "latency_s": 3.2,   "status": "active"},
+    {"short": "Qwen-1.5B",  "label": "Qwen2.5-1.5B-Instruct", "params_B": 1.5,   "jaccard": 0.18, "temporal_n": 3, "temporal_d": 7,  "latency_s": 129.0, "status": "tested"},
+    {"short": "flan-t5",    "label": "flan-t5-base",           "params_B": 0.25,  "jaccard": 0.00, "temporal_n": None,"temporal_d": None,"latency_s": None,"status": "abandoned"},
+    {"short": "t-tagger",   "label": "temporal_tagger",        "params_B": 0.25,  "jaccard": None, "temporal_n": 0, "temporal_d": 8,  "latency_s": None,  "status": "abandoned"},
+    {"short": "MiniLM",     "label": "all-MiniLM-L6-v2",       "params_B": 0.022, "jaccard": None, "temporal_n": None,"temporal_d": None,"latency_s": 0.05,"status": "active"},
 ]
 
 STATUS_COLORS = {"active": "#2ecc71", "tested": "#e67e22", "abandoned": "#95a5a6"}
@@ -233,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

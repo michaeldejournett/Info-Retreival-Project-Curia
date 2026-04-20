@@ -17,7 +17,7 @@ m=os.environ['LOCAL_MODEL_ID']; \
 AutoTokenizer.from_pretrained(m); AutoModelForCausalLM.from_pretrained(m)"; \
     fi
 
-COPY search.py api.py scraper.py local_models.py temporal.py expansion.py ./
+COPY search.py api.py scraper.py local_models.py temporal.py expansion.py prompt_templates.py ./
 
 ENV EVENTS_FILE=scraped/events.json
 ENV SCRAPE_INTERVAL=3600

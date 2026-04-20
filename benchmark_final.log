@@ -1,0 +1,114 @@
+Dispatching 1 concurrent-safe model(s) with max_workers=1
+Running gemini:gemma-3-27b-it on 72 cases x 1 run(s) each
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 10/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 20/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 30/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 40/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 50/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 60/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 70/72 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 72/72 cases done
+✓ gemini:gemma-3-27b-it complete
+Running 2 serial-only model(s) sequentially
+Running huggingface:Qwen/Qwen2.5-0.5B-Instruct on 72 cases x 1 run(s) each
+Disabling PyTorch because PyTorch >= 2.4 is required but found 2.3.1+rocm5.7
+PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 10/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 20/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 30/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 40/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 50/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 60/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 70/72 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 72/72 cases done
+✓ huggingface:Qwen/Qwen2.5-0.5B-Instruct complete
+Running huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0 on 72 cases x 1 run(s) each
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 10/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 20/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 30/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 40/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 50/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 60/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 70/72 cases done
+  [huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0] 72/72 cases done
+✓ huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0 complete
+Run complete.
+Summary JSON: testing/benchmark/reports/run-20260419-222201/summary.json
+Per-query CSV: testing/benchmark/reports/run-20260419-222201/per_query.csv
+Summary MD : testing/benchmark/reports/run-20260419-222201/summary.md
+Gate JSON   : testing/benchmark/reports/run-20260419-222201/gate_results.json
+Gate MD     : testing/benchmark/reports/run-20260419-222201/gate_results.md
+Visuals dir : testing/benchmark/reports/run-20260419-222201/visuals
+Figures sync: figures (5 file(s))

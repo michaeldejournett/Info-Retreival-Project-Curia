@@ -1,0 +1,34 @@
+Dispatching 1 concurrent-safe model(s) with max_workers=1
+Running gemini:gemma-3-27b-it on 12 cases x 1 run(s) each
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 4/12 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 8/12 cases done
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+  [gemini:gemma-3-27b-it] 12/12 cases done
+✓ gemini:gemma-3-27b-it complete
+Running 1 serial-only model(s) sequentially
+Running huggingface:Qwen/Qwen2.5-0.5B-Instruct on 12 cases x 1 run(s) each
+Disabling PyTorch because PyTorch >= 2.4 is required but found 2.3.1+rocm5.7
+PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 4/12 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 8/12 cases done
+  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 12/12 cases done
+✓ huggingface:Qwen/Qwen2.5-0.5B-Instruct complete
+Run complete.
+Summary JSON: testing/benchmark/reports/run-20260419-221748/summary.json
+Per-query CSV: testing/benchmark/reports/run-20260419-221748/per_query.csv
+Summary MD : testing/benchmark/reports/run-20260419-221748/summary.md
+Gate JSON   : testing/benchmark/reports/run-20260419-221748/gate_results.json
+Gate MD     : testing/benchmark/reports/run-20260419-221748/gate_results.md
+Visuals dir : testing/benchmark/reports/run-20260419-221748/visuals
+Figures sync: figures (5 file(s))

@@ -1,0 +1,1714 @@
+{
+  "metadata": {
+    "name": "curia-rigorous-robustness",
+    "version": "1.1",
+    "label_status": "heuristic-auto",
+    "notes": "Auto-derived from scraped/events.json using noisy query rewrites and quality filtering for robustness evaluation"
+  },
+  "cases": [
+    {
+      "id": "RIG-RBS-001A",
+      "query": "hey any asun senate events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "asun",
+          "senate"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/190248/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-001B",
+      "query": "need asun senate 2026-04-01 around 18:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "asun",
+          "senate"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "18:30",
+        "time_to": "20:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/190248/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-001C",
+      "query": "LOOKING FOR ASUN SENATE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "asun",
+          "senate"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/190248/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-002A",
+      "query": "hey any audience national events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "audience",
+          "national",
+          "theatre"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197180/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-002B",
+      "query": "need audience national 2026-04-01 around 19:15",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "audience",
+          "national",
+          "theatre"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "19:15",
+        "time_to": "21:15",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197180/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-002C",
+      "query": "LOOKING FOR AUDIENCE NATIONAL EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "audience",
+          "national",
+          "theatre"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197180/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-003A",
+      "query": "hey any dma colton events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "dma",
+          "colton",
+          "schaefer"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197709/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-003B",
+      "query": "need dma colton 2026-04-01 around 19:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "dma",
+          "colton",
+          "schaefer"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "19:30",
+        "time_to": "21:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197709/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-003C",
+      "query": "LOOKING FOR DMA COLTON EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "dma",
+          "colton",
+          "schaefer"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197709/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-004A",
+      "query": "hey any house observatory events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "house",
+          "observatory"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196699/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-004B",
+      "query": "need house observatory 2026-04-01 around 21:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "house",
+          "observatory"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "21:00",
+        "time_to": "23:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196699/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-004C",
+      "query": "LOOKING FOR HOUSE OBSERVATORY EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "house",
+          "observatory"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196699/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-005A",
+      "query": "hey any last day events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "last",
+          "day",
+          "apply"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196201/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-005B",
+      "query": "need last day 2026-04-01 around 23:55",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "last",
+          "day",
+          "apply"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "23:55",
+        "time_to": "23:59",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196201/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-005C",
+      "query": "LOOKING FOR LAST DAY EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "last",
+          "day",
+          "apply"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196201/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-006A",
+      "query": "hey any priority deadline events on 2026-04-01?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "priority",
+          "deadline",
+          "first"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196199/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-006B",
+      "query": "need priority deadline 2026-04-01 around 23:55",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "priority",
+          "deadline",
+          "first"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "23:55",
+        "time_to": "23:59",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196199/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-006C",
+      "query": "LOOKING FOR PRIORITY DEADLINE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "priority",
+          "deadline",
+          "first"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196199/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-007A",
+      "query": "hey any pre retirement events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "pre",
+          "retirement"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/184647/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-007B",
+      "query": "need pre retirement 2026-04-02 around 08:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "pre",
+          "retirement"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "08:30",
+        "time_to": "10:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/184647/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-007C",
+      "query": "LOOKING FOR PRE RETIREMENT EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "pre",
+          "retirement"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/184647/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-008A",
+      "query": "hey any certified community events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "certified",
+          "community",
+          "behavioral"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198650/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-008B",
+      "query": "need certified community 2026-04-02 around 09:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "certified",
+          "community",
+          "behavioral"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "09:00",
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198650/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-008C",
+      "query": "LOOKING FOR CERTIFIED COMMUNITY EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "certified",
+          "community",
+          "behavioral"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198650/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-009A",
+      "query": "hey any great plains events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198729/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-009B",
+      "query": "need great plains 2026-04-02 around 09:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "09:00",
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198729/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-009C",
+      "query": "LOOKING FOR GREAT PLAINS EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198729/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-010A",
+      "query": "hey any nrich goals events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "nrich",
+          "goals",
+          "growth"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195651/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-010B",
+      "query": "need nrich goals 2026-04-02 around 10:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "nrich",
+          "goals",
+          "growth"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "10:00",
+        "time_to": "12:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195651/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-010C",
+      "query": "LOOKING FOR NRICH GOALS EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "nrich",
+          "goals",
+          "growth"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195651/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-011A",
+      "query": "hey any pivot database events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198581/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-011B",
+      "query": "need pivot database 2026-04-02 around 10:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "10:00",
+        "time_to": "12:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198581/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-011C",
+      "query": "LOOKING FOR PIVOT DATABASE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198581/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-012A",
+      "query": "hey any lunch nebraska events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "lunch",
+          "nebraska",
+          "appleseed"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198106/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-012B",
+      "query": "need lunch nebraska 2026-04-02 around 12:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "lunch",
+          "nebraska",
+          "appleseed"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "12:00",
+        "time_to": "14:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198106/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-012C",
+      "query": "LOOKING FOR LUNCH NEBRASKA EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "lunch",
+          "nebraska",
+          "appleseed"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198106/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-013A",
+      "query": "hey any nspire drive events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "nspire",
+          "drive",
+          "performance"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195649/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-013B",
+      "query": "need nspire drive 2026-04-02 around 13:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "nspire",
+          "drive",
+          "performance"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "13:00",
+        "time_to": "15:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195649/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-013C",
+      "query": "LOOKING FOR NSPIRE DRIVE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "nspire",
+          "drive",
+          "performance"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195649/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-014A",
+      "query": "hey any benefits overview events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "benefits",
+          "overview"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/191198/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-014B",
+      "query": "need benefits overview 2026-04-02 around 14:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "benefits",
+          "overview"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "14:00",
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/191198/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-014C",
+      "query": "LOOKING FOR BENEFITS OVERVIEW EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "benefits",
+          "overview"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/191198/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-015A",
+      "query": "hey any time fair events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "time",
+          "fair"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195764/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-015B",
+      "query": "need time fair 2026-04-02 around 14:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "time",
+          "fair"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "14:00",
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195764/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-015C",
+      "query": "LOOKING FOR TIME FAIR EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "time",
+          "fair"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195764/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-016A",
+      "query": "hey any popcorn pop events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "popcorn",
+          "pop"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/190660/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-016B",
+      "query": "need popcorn pop 2026-04-02 around 15:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "popcorn",
+          "pop"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "15:00",
+        "time_to": "17:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/190660/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-016C",
+      "query": "LOOKING FOR POPCORN POP EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "popcorn",
+          "pop"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/190660/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-017A",
+      "query": "hey any command room events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "command",
+          "room",
+          "owning"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198348/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-017B",
+      "query": "need command room 2026-04-02 around 15:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "command",
+          "room",
+          "owning"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "15:30",
+        "time_to": "17:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198348/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-017C",
+      "query": "LOOKING FOR COMMAND ROOM EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "command",
+          "room",
+          "owning"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198348/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-018A",
+      "query": "hey any humanities edge events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "humanities",
+          "edge",
+          "presents"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/193214/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-018B",
+      "query": "need humanities edge 2026-04-02 around 17:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "humanities",
+          "edge",
+          "presents"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "17:30",
+        "time_to": "19:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/193214/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-018C",
+      "query": "LOOKING FOR HUMANITIES EDGE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "humanities",
+          "edge",
+          "presents"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/193214/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-019A",
+      "query": "hey any pink moon events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "pink",
+          "moon",
+          "paddle"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195341/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-019B",
+      "query": "need pink moon 2026-04-02 around 18:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "pink",
+          "moon",
+          "paddle"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "18:00",
+        "time_to": "20:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195341/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-019C",
+      "query": "LOOKING FOR PINK MOON EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "pink",
+          "moon",
+          "paddle"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/195341/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-020A",
+      "query": "hey any backyard farmer events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "backyard",
+          "farmer"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198330/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-020B",
+      "query": "need backyard farmer 2026-04-02 around 19:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "backyard",
+          "farmer"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "19:00",
+        "time_to": "21:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198330/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-020C",
+      "query": "LOOKING FOR BACKYARD FARMER EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "backyard",
+          "farmer"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198330/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-021A",
+      "query": "hey any film oyate events on 2026-04-02?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "film",
+          "oyate",
+          "woyaka"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198720/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-021B",
+      "query": "need film oyate 2026-04-02 around 19:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "film",
+          "oyate",
+          "woyaka"
+        ],
+        "date_from": "2026-04-02",
+        "date_to": "2026-04-02",
+        "time_from": "19:30",
+        "time_to": "21:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198720/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-021C",
+      "query": "LOOKING FOR FILM OYATE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "film",
+          "oyate",
+          "woyaka"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/02/198720/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-022A",
+      "query": "hey any first friday events on 2026-04-03?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "first",
+          "friday",
+          "weather"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198304/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-022B",
+      "query": "need first friday 2026-04-03 around 09:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "first",
+          "friday",
+          "weather"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": "09:00",
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198304/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-022C",
+      "query": "LOOKING FOR FIRST FRIDAY EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "first",
+          "friday",
+          "weather"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198304/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-023A",
+      "query": "hey any global trade events on 2026-04-03?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "global",
+          "trade",
+          "analysis"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198435/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-023B",
+      "query": "need global trade 2026-04-03 around 09:00",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "global",
+          "trade",
+          "analysis"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": "09:00",
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198435/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-023C",
+      "query": "LOOKING FOR GLOBAL TRADE EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "global",
+          "trade",
+          "analysis"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/198435/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    },
+    {
+      "id": "RIG-RBS-024A",
+      "query": "hey any wellbeing discussions events on 2026-04-03?",
+      "tags": [
+        "noisy",
+        "topic",
+        "date"
+      ],
+      "expected": {
+        "keywords": [
+          "wellbeing",
+          "discussions"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/197207/"
+        ]
+      },
+      "notes": "Informal language and filler words"
+    },
+    {
+      "id": "RIG-RBS-024B",
+      "query": "need wellbeing discussions 2026-04-03 around 09:30",
+      "tags": [
+        "noisy",
+        "topic",
+        "date",
+        "time"
+      ],
+      "expected": {
+        "keywords": [
+          "wellbeing",
+          "discussions"
+        ],
+        "date_from": "2026-04-03",
+        "date_to": "2026-04-03",
+        "time_from": "09:30",
+        "time_to": "11:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/197207/"
+        ]
+      },
+      "notes": "Approximate time wording to test robust temporal normalization"
+    },
+    {
+      "id": "RIG-RBS-024C",
+      "query": "LOOKING FOR WELLBEING DISCUSSIONS EVENT",
+      "tags": [
+        "noisy",
+        "topic"
+      ],
+      "expected": {
+        "keywords": [
+          "wellbeing",
+          "discussions"
+        ],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/03/197207/"
+        ]
+      },
+      "notes": "Uppercase and terse query style"
+    }
+  ]
+}

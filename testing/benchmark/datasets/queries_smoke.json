@@ -1,0 +1,192 @@
+{
+  "metadata": {
+    "name": "curia-smoke-benchmark",
+    "version": "1.0",
+    "label_status": "seed-manual",
+    "notes": "Small labeled set for fast harness validation"
+  },
+  "cases": [
+    {
+      "id": "SMK-001",
+      "query": "food events",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["food", "dining"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "basic topical query"
+    },
+    {
+      "id": "SMK-002",
+      "query": "music concerts",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["music", "concert"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "basic topical query"
+    },
+    {
+      "id": "SMK-003",
+      "query": "volunteer opportunities",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["volunteer", "service", "community"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "community/service intent"
+    },
+    {
+      "id": "SMK-004",
+      "query": "rage room tonight",
+      "tags": ["topic", "time"],
+      "expected": {
+        "keywords": ["rage room"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": "17:00",
+        "time_to": "21:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/17/195511/",
+          "https://unl.campuslabs.com/engage/event/12022958"
+        ]
+      },
+      "notes": "time-of-day extraction and retrieval check"
+    },
+    {
+      "id": "SMK-005",
+      "query": "soccer world cup event",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["soccer", "world cup"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/17/194856/",
+          "https://unl.campuslabs.com/engage/event/12131451"
+        ]
+      },
+      "notes": "duplicate sources expected"
+    },
+    {
+      "id": "SMK-006",
+      "query": "events on 2026-04-17",
+      "tags": ["date"],
+      "expected": {
+        "keywords": [],
+        "date_from": "2026-04-17",
+        "date_to": "2026-04-17",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "absolute date parsing"
+    },
+    {
+      "id": "SMK-007",
+      "query": "clothing swap on 2026-04-21",
+      "tags": ["topic", "date"],
+      "expected": {
+        "keywords": ["clothing swap"],
+        "date_from": "2026-04-21",
+        "date_to": "2026-04-21",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://unl.campuslabs.com/engage/event/12328807"
+        ]
+      },
+      "notes": "topic plus absolute date"
+    },
+    {
+      "id": "SMK-008",
+      "query": "study groups after 6pm",
+      "tags": ["topic", "time"],
+      "expected": {
+        "keywords": ["study group"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": "18:00",
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "open-ended lower time bound"
+    },
+    {
+      "id": "SMK-009",
+      "query": "events before noon",
+      "tags": ["time"],
+      "expected": {
+        "keywords": [],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": "12:00",
+        "relevant_event_urls": []
+      },
+      "notes": "open-ended upper time bound"
+    },
+    {
+      "id": "SMK-010",
+      "query": "badminton tournament",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["badminton", "tournament"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://unl.campuslabs.com/engage/event/12238648",
+          "https://unl.campuslabs.com/engage/event/12238649"
+        ]
+      },
+      "notes": "retrieval ranking check"
+    },
+    {
+      "id": "SMK-011",
+      "query": "sustainability meeting",
+      "tags": ["topic"],
+      "expected": {
+        "keywords": ["sustainability", "sustain"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": []
+      },
+      "notes": "generalization/synonym behavior"
+    },
+    {
+      "id": "SMK-012",
+      "query": "judo practice in the evening",
+      "tags": ["topic", "time"],
+      "expected": {
+        "keywords": ["judo", "practice"],
+        "date_from": null,
+        "date_to": null,
+        "time_from": "17:00",
+        "time_to": "21:00",
+        "relevant_event_urls": [
+          "https://unl.campuslabs.com/engage/event/12028225",
+          "https://unl.campuslabs.com/engage/event/12028226"
+        ]
+      },
+      "notes": "topic plus relative time phrase"
+    }
+  ]
+}
