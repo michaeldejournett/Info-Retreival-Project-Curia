@@ -64,12 +64,94 @@ docker compose up --build
 
 ## Testing & Evaluation
 
-### Run the test suite
+### Unit tests
+
+Two pytest suites live in `tests/`:
+
+| File | What it covers |
+|------|----------------|
+| `tests/test_search.py` | Core search logic — music, sports, food, and case-insensitivity queries. Runs against `scraped/events.json` when present; falls back to in-file sample events otherwise. |
+| `tests/test_search_accuracy.py` | Keyword expansion accuracy — validates that each category defined in `backend/db.js` returns more results with the expanded keyword set than with a single bare term. |
 
 ```bash
 pip install -r api/requirements.txt pytest
-python -m pytest tests/
+python -m pytest tests/ -v
 ```
+
+### Benchmark suite
+
+The benchmark suite (`testing/benchmark/`) measures retrieval quality, latency, and robustness across model providers. It supports three backends (Gemini, Ollama, HuggingFace hosted/local) and five datasets.
+
+**Prerequisites**
+
+```bash
+pip install -r api/requirements.txt
+```
+
+For HuggingFace hosted models, set `HF_TOKEN` in your environment. For local inference, also install `torch` and `transformers`.
+
+**Datasets**
+
+| Dataset | Cases | Focus |
+|---------|-------|-------|
+| `queries_smoke.json` | 5 | Sanity check — fast pass over the full pipeline |
+| `queries_branch_compare_seed.json` | 8 | Seed cases for A/B branch comparisons |
+| `queries_rigorous_retrieval.json` | 96 | Keyword and semantic retrieval |
+| `queries_rigorous_temporal.json` | 72 | Date/time expression handling |
+| `queries_rigorous_robustness.json` | 72 | Typos, partial matches, edge inputs |
+
+**Running benchmarks via npm**
+
+```bash
+npm run benchmark:smoke          # quick sanity pass (default model set, smoke dataset)
+npm run benchmark:correctness    # correctness gate on smoke dataset
+npm run benchmark:latency        # latency-stability gate on smoke dataset
+npm run benchmark:full           # full rigorous pass (all three datasets)
+npm run benchmark:first-pass     # HuggingFace hosted models, smoke dataset
+npm run benchmark:hf:router-chat # HuggingFace chat-router models
+npm run benchmark:local-lite     # local CPU inference, smoke dataset
+npm run benchmark:run-all        # all model sets, smoke dataset
+```
+
+**Running benchmarks directly**
+
+```bash
+# Smoke pass with a specific model
+python -m testing.benchmark.run_benchmark --profile smoke --models gemini:gemma-3-27b-it
+
+# Full rigorous pass with a custom dataset
+python -m testing.benchmark.run_benchmark \
+  --profile full \
+  --dataset testing/benchmark/datasets/queries_rigorous_temporal.json \
+  --models gemini:gemma-3-27b-it
+
+# Local HuggingFace model
+python -m testing.benchmark.run_benchmark \
+  --profile smoke \
+  --model-set hf-local-lite \
+  --huggingface-backend local
+```
+
+**Output**
+
+Each run creates a timestamped directory under `testing/benchmark/reports/` containing:
+
+```
+reports/<timestamp>/
+├── summary.json          # aggregate scores per model
+├── summary.md            # human-readable summary
+├── per_query.csv         # per-query scores and latencies
+├── gate_results.json     # pass/fail for each gate profile
+├── gate_results.md
+└── visuals/              # PNG charts (synced to figures/)
+    ├── fig1_jaccard_similarity.png
+    ├── fig2_temporal_accuracy.png
+    ├── fig3_latency_cdf.png
+    ├── fig4_quality_vs_speed.png
+    └── fig5_per_query_heatmap.png
+```
+
+The five canonical figures are also copied to `figures/` at the project root after each run.
 
 ### Generate search metrics and charts
 

@@ -19,5 +19,11 @@ dist/
 # Misc
 scraped/*.json.bak
 backend/uploads/
+*.log
+*.bak
+=*
+image.png
+image*.png
 
 testing/benchmark/reports/
+.pytest_cache/

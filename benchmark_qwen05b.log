@@ -1,22 +1,0 @@
-Running 1 serial-only model(s) sequentially
-Running huggingface:Qwen/Qwen2.5-0.5B-Instruct on 72 cases x 1 run(s) each
-`torch_dtype` is deprecated! Use `dtype` instead!
-Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  51%|█████     | 147/290 [00:00<00:00, 1458.42it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1676.79it/s]
-The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
-/home/michaeldejournett/.local/lib/python3.12/site-packages/transformers/models/qwen2/modeling_qwen2.py:108: UserWarning: Attempting to use hipBLASLt on an unsupported architecture! Overriding blas backend to hipblas (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:310.)
-  freqs = (inv_freq_expanded.float() @ position_ids_expanded.float()).transpose(1, 2)
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 10/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 20/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 30/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 40/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 50/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 60/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 70/72 cases done
-  [huggingface:Qwen/Qwen2.5-0.5B-Instruct] 72/72 cases done
-✓ huggingface:Qwen/Qwen2.5-0.5B-Instruct complete
-Run complete.
-Summary JSON: testing/benchmark/reports/run-20260420-014844/summary.json
-Per-query CSV: testing/benchmark/reports/run-20260420-014844/per_query.csv
-Summary MD : testing/benchmark/reports/run-20260420-014844/summary.md
-Gate JSON   : testing/benchmark/reports/run-20260420-014844/gate_results.json
-Gate MD     : testing/benchmark/reports/run-20260420-014844/gate_results.md
