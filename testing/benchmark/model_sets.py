@@ -3,61 +3,24 @@ from __future__ import annotations
 from typing import Dict
 
 
+CORE_SEVEN_MODELS = ",".join(
+    [
+        "gemini:gemma-3-27b-it",
+        "ollama:llama3:latest",
+        "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
+        "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
+        "huggingface:google/flan-t5-base",
+        "huggingface:MBZUAI/LaMini-Flan-T5-248M",
+    ]
+)
+
+
 MODEL_SETS: Dict[str, str] = {
-    "baseline": "gemini:gemma-3-27b-it,ollama:llama3:latest",
-    "legacy-compare-mixed": ",".join(
-        [
-            "gemini:gemma-3-27b-it",
-            "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
-            "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
-        ]
-    ),
-    "legacy-compare-local": ",".join(
-        [
-            "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
-            "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
-        ]
-    ),
-    "hf-router-chat": ",".join(
-        [
-            "huggingface:google/gemma-4-31B-it",
-            "huggingface:Qwen/Qwen3.5-9B",
-            "huggingface:CohereLabs/c4ai-command-r7b-12-2024",
-        ]
-    ),
-    "hf-local-lite": ",".join(
-        [
-            "huggingface:MBZUAI/LaMini-Flan-T5-248M",
-            "huggingface:google/flan-t5-base",
-            "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        ]
-    ),
-    "hf-first-pass": ",".join(
-        [
-            "huggingface:MBZUAI/LaMini-Flan-T5-248M",
-            "huggingface:google/flan-t5-base",
-            "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-            "huggingface:google/gemma-2-2b-it",
-            "huggingface:Qwen/Qwen2.5-3B-Instruct",
-            "huggingface:microsoft/Phi-3-mini-4k-instruct",
-            "huggingface:mistralai/Mistral-7B-Instruct-v0.2",
-        ]
-    ),
-    "all": ",".join(
-        [
-            "gemini:gemma-3-27b-it",
-            "huggingface:MBZUAI/LaMini-Flan-T5-248M",
-            "huggingface:google/flan-t5-base",
-            "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-            "huggingface:google/gemma-2-2b-it",
-            "huggingface:Qwen/Qwen2.5-3B-Instruct",
-            "huggingface:microsoft/Phi-3-mini-4k-instruct",
-            "huggingface:mistralai/Mistral-7B-Instruct-v0.2",
-        ]
-    )
+    "core-seven": CORE_SEVEN_MODELS,
 }
 
-DEFAULT_MODEL_SET = "baseline"
+DEFAULT_MODEL_SET = "core-seven"
 
 
 def get_model_set(name: str) -> str:
