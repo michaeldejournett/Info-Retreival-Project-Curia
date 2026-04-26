@@ -1,6 +1,19 @@
-﻿import time
+﻿import os
+import sys
+import time
 import statistics
-import matplotlib.pyplot as plt
+
+# Ensure the repository root is on the import path when running this file directly.
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+    print("Warning: matplotlib is not installed. Plot generation will be skipped.")
+
 from api.search import base_terms, search
 
 
@@ -42,6 +55,10 @@ def compute_metrics(models_outputs):
 
 # Plot top-1 and top-3 accuracy for each model.
 def plot_topk(results):
+    if plt is None:
+        print("Skipping top-k accuracy plot: matplotlib is not installed.")
+        return
+
     names = list(results.keys())
     top1 = [results[n]["top1"] * 100 for n in names]
     top3 = [results[n]["top3"] * 100 for n in names]
@@ -63,6 +80,10 @@ def plot_topk(results):
 
 # Plot accuracy vs average response time for each model.
 def plot_accuracy_vs_speed(results):
+    if plt is None:
+        print("Skipping accuracy vs speed plot: matplotlib is not installed.")
+        return
+
     names = list(results.keys())
     times = [results[n]["avg_response_time"] for n in names]
     accuracies = [results[n]["top3"] * 100 for n in names]
@@ -118,6 +139,10 @@ def measure_runtime():
 
 # Plot runtime vs input size.
 def plot_runtime(input_sizes, runtimes):
+    if plt is None:
+        print("Skipping runtime plot: matplotlib is not installed.")
+        return
+
     plt.figure()
     plt.plot(input_sizes, runtimes, marker="o")
     plt.xlabel("Input Size (# of events)")
@@ -129,26 +154,54 @@ def plot_runtime(input_sizes, runtimes):
 
 # Main function
 if __name__ == "__main__":
+    # Ground truths for 4 test cases
+    gts = ["b", "x", "n", "z"]
+
     models_outputs = {
-        "gemma-3-27b-it": {
-            "predictions": [
-                ["a", "b", "c"],
-                ["x", "y", "z"],
-                ["m", "n", "o"],
-                ["p", "q", "r"],
-            ],
-            "ground_truths": ["b", "x", "n", "z"],
-            "response_times": [0.01, 0.02, 0.015, 0.018],
-            "param_count": 1000,
+        "Gemma-27B": {
+            "predictions": [["a", "b", "c"], ["x", "y", "z"], ["m", "n", "o"], ["p", "q", "r"]],
+            "ground_truths": gts,
+            "response_times": [7.5, 8.1, 7.9, 7.7], # High latency
+            "param_count": 27.0,
         },
+        "Llama3-8B": {
+            "predictions": [["b", "a", "c"], ["x", "z", "y"], ["n", "m", "o"], ["z", "p", "q"]],
+            "ground_truths": gts,
+            "response_times": [3.2, 3.5, 3.1, 3.4],
+            "param_count": 8.0,
+        },
+        "Qwen-1.5B": {
+            "predictions": [["a", "c", "b"], ["y", "x", "z"], ["m", "o", "p"], ["q", "r", "z"]],
+            "ground_truths": gts,
+            "response_times": [1.2, 1.4, 1.3, 1.5],
+            "param_count": 1.5,
+        },
+        "TinyLlama-1.1B": {
+            "predictions": [["a", "e", "f"], ["y", "g", "h"], ["m", "o", "i"], ["q", "r", "s"]],
+            "ground_truths": gts, # Will result in lower accuracy
+            "response_times": [0.5, 0.6, 0.5, 0.7],
+            "param_count": 1.1,
+        },
+        "Qwen-0.5B": {
+            "predictions": [["e", "f", "g"], ["h", "i", "j"], ["k", "l", "m"], ["n", "o", "p"]],
+            "ground_truths": gts,
+            "response_times": [0.2, 0.3, 0.2, 0.3], # Very fast
+            "param_count": 0.5,
+        }
     }
 
+    # 1. Compute metrics for all models
     metrics = compute_metrics(models_outputs)
-    print("Computed metrics:")
+    
+    print(f"{'Model':<15} | {'Top-1':<7} | {'Top-3':<7} | {'Avg Time':<10}")
+    print("-" * 50)
     for name, values in metrics.items():
-        print(name, values)
+        print(f"{name:<15} | {values['top1']:.2f}    | {values['top3']:.2f}    | {values['avg_response_time']:.3f}s")
 
+    # 2. Run scalability benchmark
     sizes, times = measure_runtime()
+    
+    # 3. Generate all visualizations
     plot_runtime(sizes, times)
     plot_topk(metrics)
     plot_accuracy_vs_speed(metrics)

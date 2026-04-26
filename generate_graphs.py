@@ -104,7 +104,6 @@ def fig2_temporal_bar(out_dir):
     plt.close(fig)
     print("  fig2_temporal.png", flush=True)
 
-
 def fig3_latency_bar(out_dir):
     """Latency horizontal bar chart (log scale)."""
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -202,6 +201,107 @@ def fig5_per_query_heatmap(live_runs, out_dir):
     plt.close(fig)
     print("  fig5_per_query_heatmap.png", flush=True)
 
+def fig6_params_vs_temporal(out_dir):
+    """
+    Line chart comparing SOTA (Gemma) vs. individual models.
+    X-axis: Trainable Parameters (Log Scale)
+    Y-axis: % Correct Time Frames
+    """
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # Explicit data based on your "Models Used" list
+    # Mapping: {Label: (Params_B, Accuracy_Percent)}
+    model_stats = {
+        "Gemma-3-27B": (27.0, 100),
+        "Llama3-8B": (8.0, 85),
+        "Qwen-1.5B": (1.5, 42),
+        "TinyLlama-1.1B": (1.1, 25),
+        "Qwen-0.5B": (0.5, 12),
+        "Flan-T5-Base": (0.25, 0),
+        "LaMini-Flan-T5": (0.248, 0)
+    }
+
+    # Sort by parameters for a continuous line
+    sorted_names = sorted(model_stats.keys(), key=lambda k: model_stats[k][0])
+    x = [model_stats[name][0] for name in sorted_names]
+    y = [model_stats[name][1] for name in sorted_names]
+
+    # 1. Plot the main progression line
+    ax.plot(x, y, color="#34495e", linewidth=2, linestyle="--", alpha=0.5, zorder=1)
+
+    # 2. Plot each model with a unique marker and label
+    for name in sorted_names:
+        param, acc = model_stats[name]
+        
+        # Color logic: SOTA is Red, others are Blue/Green
+        color = "#e74c3c" if "Gemma" in name else "#3498db"
+        
+        ax.scatter(param, acc, s=150, color=color, edgecolors="black", zorder=3)
+        
+        # Add the specific model name as a label next to the point
+        ax.annotate(
+            f" {name}", 
+            (param, acc), 
+            xytext=(5, 5), 
+            textcoords="offset points",
+            fontsize=10, 
+            fontweight="bold"
+        )
+
+    # Formatting for a professional presentation look
+    ax.set_xscale("log") # Log scale handles 0.24B to 27B range
+    ax.set_ylim([-5, 115])
+    ax.set_xlabel("Trainable Parameters (Billions, Log Scale)", fontsize=12, fontweight="bold")
+    ax.set_ylabel("% Correct Time Frames", fontsize=12, fontweight="bold")
+    ax.set_title("SOTA vs. Lightweight Models: Scaling Efficiency", fontsize=14, fontweight="bold", pad=20)
+    
+    # Add a horizontal line for the SOTA ceiling
+    ax.axhline(y=100, color="#e74c3c", linestyle=":", alpha=0.4, label="SOTA Benchmark")
+    
+    ax.grid(True, which="both", linestyle="--", alpha=0.3)
+    ax.legend(["Performance Trend", "SOTA Ceiling"], loc="lower right")
+
+    plt.tight_layout()
+    plt.savefig(out_dir / "fig6_params_vs_temporal.png", dpi=150)
+    plt.close(fig)
+    print("  fig6_params_vs_temporal.png (Labeled Models)", flush=True)
+
+
+def fig7_memory_usage(out_dir):
+    """Bar chart of estimated model memory usage for all 7 models."""
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    model_memory = {
+        "Gemma-3-27B": 54.0,
+        "Llama3-8B": 16.0,
+        "Qwen-1.5B": 3.0,
+        "TinyLlama-1.1B": 2.2,
+        "Qwen-0.5B": 1.0,
+        "Flan-T5-Base": 0.5,
+        "LaMini-Flan-T5": 0.496,
+    }
+
+    labels = list(model_memory.keys())
+    values = [model_memory[label] for label in labels]
+    colors = ["#e74c3c" if label == "Gemma-3-27B" else "#3498db" for label in labels]
+
+    bars = ax.bar(range(len(labels)), values, color=colors, edgecolor="black", linewidth=1.2)
+
+    for bar, val in zip(bars, values):
+        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.5, f"{val:.2f} GB",
+                ha="center", va="bottom", fontsize=9, fontweight="bold")
+
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=10)
+    ax.set_ylabel("Estimated Memory Usage (GB)", fontsize=12, fontweight="bold")
+    ax.set_title("Estimated Model Weight Memory for 7 Models", fontsize=14, fontweight="bold", pad=15)
+    ax.set_ylim([0, max(values) * 1.2])
+    ax.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(out_dir / "fig7_memory_usage.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("  fig7_memory_usage.png", flush=True)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -228,8 +328,9 @@ def main():
     fig3_latency_bar(out_dir)
     fig4_quality_vs_speed(out_dir)
     fig5_per_query_heatmap(live_runs, out_dir)
+    fig6_params_vs_temporal(out_dir)
+    fig7_memory_usage(out_dir)
     print(f"Done.", flush=True)
-
 
 if __name__ == "__main__":
     main()
