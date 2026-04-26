@@ -161,11 +161,12 @@ reports/<timestamp>/
   ├── fig1_jaccard.png
   ├── fig2_temporal.png
   ├── fig3_latency.png
-    ├── fig4_quality_vs_speed.png
-    └── fig5_per_query_heatmap.png
+  ├── fig4_quality_vs_speed.png
+  ├── fig5_per_query_heatmap.png
+  └── fig6_time_vs_quality_bubble.png
 ```
 
-The five canonical figures are also copied to `figures/` at the project root after each run.
+The six canonical figures are also copied to `figures/` at the project root after each run.
 
 ### Generate search metrics and charts
 

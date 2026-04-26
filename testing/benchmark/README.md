@@ -103,6 +103,7 @@ Each run creates a timestamped folder in `testing/benchmark/reports/`:
   - `fig3_latency.png`
   - `fig4_quality_vs_speed.png`
   - `fig5_per_query_heatmap.png`
+  - `fig6_time_vs_quality_bubble.png`
 
 Latest canonical figures are synchronized to the root `figures/` directory.
 
@@ -120,3 +121,15 @@ Latest canonical figures are synchronized to the root `figures/` directory.
 
 - Canonical visuals require at least one Gemini model in a run because Gemini is the baseline comparator.
 - The rigorous datasets are auto-derived (`metadata.label_status=heuristic-auto`) and are useful for stress testing.
+
+## Optional Overrides
+
+For best performance it is **heavily** reccomended to run all local models using PyTorch CUDA support. This allows for the HuggingFace LLM models to use GPU acceleration, vastly boosting the speed of the model. To set up CUDA support for Python, follow these [instructions](https://pytorch.org/get-started/locally/). Note that you may need to uninstall any existing PyTorch dependencies based on the individual technology or hardware of your system (e.g. Windows 10/11, GPU version)
+
+To do so, run the command:
+
+```powershell
+pip uninstall torch
+```
+
+By default, CUDA is disabled to prevent issues with non-compliant systems. To enable CUDA GPU acceleration, see [package.json](../../package.json), and run commands with the `:cuda`

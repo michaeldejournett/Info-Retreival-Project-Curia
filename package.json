@@ -9,14 +9,18 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "start": "cd backend && npm start",
     "build": "cd frontend && npm run build",
-    "benchmark:correctness": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key all-events",
     "benchmark:correctness:all-events": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key all-events",
+    "benchmark:correctness:all-events:cuda": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key all-events --huggingface-local-device cuda",
     "benchmark:correctness:robustness": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key rigorous-robustness",
+    "benchmark:correctness:robustness:cuda": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key rigorous-robustness --huggingface-local-device cuda",
     "benchmark:correctness:temporal": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key rigorous-temporal",
-    "benchmark:latency": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key all-events",
+    "benchmark:correctness:temporal:cuda": "python -m testing.benchmark.run_benchmark --suite correctness --dataset-key rigorous-temporal --huggingface-local-device cuda",
     "benchmark:latency:all-events": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key all-events",
+    "benchmark:latency:all-events:cuda": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key all-events --huggingface-local-device cuda",
     "benchmark:latency:robustness": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key rigorous-robustness",
-    "benchmark:latency:temporal": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key rigorous-temporal"
+    "benchmark:latency:robustness:cuda": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key rigorous-robustness --huggingface-local-device cuda",
+    "benchmark:latency:temporal": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key rigorous-temporal",
+    "benchmark:latency:temporal:cuda": "python -m testing.benchmark.run_benchmark --suite latency-stability --dataset-key rigorous-temporal --huggingface-local-device cuda"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
