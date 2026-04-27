@@ -296,6 +296,23 @@ def _temporal_agreement_against_baseline(
     baseline_rows = model_results.get(baseline_key) or []
     baseline_index = _build_baseline_index(baseline_rows)
 
+    # Use dataset ground truth temporal labels for a consistent denominator
+    # across all models. This avoids denominator drift caused by baseline
+    # extraction behavior on individual queries.
+    temporal_case_keys = {
+        _run_key(brow)
+        for brow in baseline_rows
+        if any(
+            (
+                brow.case.expected.date_from,
+                brow.case.expected.date_to,
+                brow.case.expected.time_from,
+                brow.case.expected.time_to,
+            )
+        )
+    }
+    denominator = len(temporal_case_keys)
+
     fractions: Dict[str, Tuple[int, int]] = {}
 
     for summary in summaries:
@@ -303,29 +320,21 @@ def _temporal_agreement_against_baseline(
         rows = model_results.get(key) or []
 
         if key == baseline_key:
-            fractions[key] = (len(rows), len(rows))
+            fractions[key] = (denominator, denominator)
             continue
 
         numerator = 0
-        # Denominator = all baseline queries that have temporal content, regardless of
-        # whether this model extracted anything. Models that never parse get 0/N.
-        denominator = sum(
-            1
-            for brow in baseline_rows
-            if any((brow.invocation.date_from, brow.invocation.date_to))
-            or any((brow.invocation.time_from, brow.invocation.time_to))
-        )
 
         for row in rows:
+            if _run_key(row) not in temporal_case_keys:
+                continue
+
             baseline_row = baseline_index.get(_run_key(row))
             if baseline_row is None:
                 continue
 
             date_base = (baseline_row.invocation.date_from, baseline_row.invocation.date_to)
             time_base = (baseline_row.invocation.time_from, baseline_row.invocation.time_to)
-            if not any(date_base) and not any(time_base):
-                continue
-
             date_pred = (row.invocation.date_from, row.invocation.date_to)
             time_pred = (row.invocation.time_from, row.invocation.time_to)
             date_ok = date_pred == date_base
