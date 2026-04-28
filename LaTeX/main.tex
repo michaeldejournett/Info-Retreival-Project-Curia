@@ -84,7 +84,7 @@ Our experiments show asymmetric degradation. Keyword extraction remains partiall
 This paper makes three contributions:
 \begin{itemize}
     \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword extraction and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
-    \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and the reasons two earlier candidates were abandoned.
+    \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and a taxonomy of four distinct failure modes across all six model candidates.
     \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities, including the case for a small hybrid retrieval module as a lightweight substitute for LLM-based keyword expansion.
 \end{itemize}
 
@@ -93,7 +93,7 @@ This paper makes three contributions:
 
 \subsection{Temporal Information Extraction}
 
-Traditional temporal extraction systems use hand-crafted rule sets and lexicons, exemplified by the TIMEX3 annotation scheme~\cite{verhagen2007semeval} and systems such as HeidelTime~\cite{strotgen2010heideltime}. These are interpretable but fragile on linguistic variation. Neural approaches fine-tuned on TimeBank~\cite{pustejovsky2003timebank} improve recall on news documents but inherit a document-centric assumption: temporal expressions are anchored to an article's publication date, not to the user's present moment. As we show in Section~\ref{sec:experiments}, a model trained for document-side TIMEX3 tagging fails completely when applied to query-side resolution against a live reference date.
+Traditional temporal extraction systems use hand-crafted rule sets and lexicons, exemplified by the TIMEX3 annotation scheme~\cite{verhagen2007semeval} and systems such as HeidelTime~\cite{strotgen2010heideltime}. These are interpretable but fragile on linguistic variation. Neural approaches fine-tuned on TimeBank~\cite{pustejovsky2003timebank} improve recall on news documents but inherit a document-centric assumption: temporal expressions are anchored to an article's publication date, not to the user's present moment. This domain gap makes TIMEX3 taggers unsuitable for query-side resolution against a live reference date.
 
 \subsection{Neural Scaling Laws}
 
@@ -333,16 +333,6 @@ In a separate 8-query exploratory evaluation (Table~\ref{table:scale}), we compa
     \end{tabular}}
     \label{table:scale}
 \end{table}
-
-\subsection{Abandoned Candidates}
-
-Two model families were evaluated and abandoned before the rigorous benchmark:
-
-\paragraph{TIMEX3 Sequence Labeler (\texttt{temporal\_tagger\_roberta2roberta})}
-This 250M encoder-decoder was fine-tuned for TIMEX3 annotation of news documents. Applied to query-side temporal resolution, it produced bare \texttt{<TIMEX3>} tags anchored to document context rather than the user's present date, inflating every query to a full-year range or hallucinating year values (e.g., 1998-W44). Result: 0/8 date matches. The domain gap between document-centric tagging and query-side resolution against a live reference date is fundamental.
-
-\paragraph{Zero-Shot Seq2Seq (\texttt{flan-t5-base})}
-Zero-shot prompting for JSON output produced alphabetic enumeration or input token repetition. The model has no chat template; structured generation at 250M parameters without fine-tuning is unreliable. Although it achieves 100\% parse success in the rigorous benchmark (seq2seq output is syntactically valid), it scores zero on all substantive metrics.
 
 \subsection{Error Analysis}
 
