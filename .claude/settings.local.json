@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npm install)",
       "Bash(npm run build)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(python -m testing.benchmark.merge_runs --runs testing/benchmark/reports/run-20260419-220155)",
+      "Bash(python -m testing.benchmark.merge_runs --runs testing/benchmark/reports/run-20260419-221748 --output-dir testing/benchmark/reports/merged-test --skip-figures-sync)",
+      "Bash(python -c ' *)",
+      "Bash(python -m testing.benchmark.run_benchmark --models huggingface:Qwen/Qwen2.5-1.5B-Instruct --dataset testing/benchmark/datasets/queries_rigorous_temporal.json --huggingface-backend local --huggingface-local-device cuda --huggingface-local-dtype float16 --max-tokens 300 --gate-profile none --timeout-s 120)",
+      "Bash(tee /tmp/qwen15b_run.log)"
     ]
   }
 }

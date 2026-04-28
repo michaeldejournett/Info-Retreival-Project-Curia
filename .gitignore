@@ -28,3 +28,11 @@ backend/uploads/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+*.log
+*.bak
+=*
+image.png
+image*.png
+
+testing/benchmark/reports/
+.pytest_cache/

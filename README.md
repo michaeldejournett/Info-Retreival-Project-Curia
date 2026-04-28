@@ -64,12 +64,109 @@ docker compose up --build
 
 ## Testing & Evaluation
 
-### Run the test suite
+### Unit tests
+
+Two pytest suites live in `tests/`:
+
+| File | What it covers |
+|------|----------------|
+| `tests/test_search.py` | Core search logic — music, sports, food, and case-insensitivity queries. Runs against `scraped/events.json` when present; falls back to in-file sample events otherwise. |
+| `tests/test_search_accuracy.py` | Keyword expansion accuracy — validates that each category defined in `backend/db.js` returns more results with the expanded keyword set than with a single bare term. |
 
 ```bash
 pip install -r api/requirements.txt pytest
-python -m pytest tests/
+python -m pytest tests/ -v
 ```
+
+### Benchmark suite
+
+The benchmark suite (`testing/benchmark/`) is intentionally constrained to a fixed strategy: 7 models, 3 datasets, and 2 suites.
+
+**Prerequisites**
+
+```bash
+pip install -r api/requirements.txt
+```
+
+For local HuggingFace inference (default), install:
+
+```bash
+pip install -r testing/benchmark/requirements-hf-local.txt
+```
+
+For hosted HuggingFace API mode, set `HF_TOKEN`.
+
+**Models (fixed set)**
+
+- `gemini:gemma-3-27b-it`
+- `ollama:llama3:latest`
+- `huggingface:Qwen/Qwen2.5-1.5B-Instruct`
+- `huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+- `huggingface:Qwen/Qwen2.5-0.5B-Instruct`
+- `huggingface:google/flan-t5-base`
+- `huggingface:MBZUAI/LaMini-Flan-T5-248M`
+
+**Datasets**
+
+| Dataset | Cases | Focus |
+|---------|-------|-------|
+| `queries_all_events.json` | 1325 | One query per scraped event title (full-corpus retrieval sweep) |
+| `queries_rigorous_temporal.json` | 72 | Date/time expression handling |
+| `queries_rigorous_robustness.json` | 72 | Typos, partial matches, edge inputs |
+
+**Running benchmarks via npm**
+
+```bash
+npm run benchmark:correctness              # correctness on all-events
+npm run benchmark:correctness:all-events
+npm run benchmark:correctness:robustness
+npm run benchmark:correctness:temporal
+
+npm run benchmark:latency                  # latency-stability on all-events
+npm run benchmark:latency:all-events
+npm run benchmark:latency:robustness
+npm run benchmark:latency:temporal
+```
+
+**Running benchmarks directly**
+
+```bash
+# Correctness suite on full all-events dataset
+python -m testing.benchmark.run_benchmark --suite correctness --dataset-key all-events
+
+# Latency/stability suite on temporal dataset
+python -m testing.benchmark.run_benchmark \
+  --suite latency-stability \
+  --dataset-key rigorous-temporal
+
+# Override to hosted HF API backend
+python -m testing.benchmark.run_benchmark \
+  --suite correctness \
+  --dataset-key rigorous-robustness \
+  --huggingface-backend api
+```
+
+**Output**
+
+Each run creates a timestamped directory under `testing/benchmark/reports/` containing:
+
+```
+reports/<timestamp>/
+├── summary.json          # aggregate scores per model
+├── summary.md            # human-readable summary
+├── per_query.csv         # per-query scores and latencies
+├── gate_results.json     # pass/fail for each gate profile
+├── gate_results.md
+└── visuals/              # PNG charts (synced to figures/)
+  ├── fig1_jaccard.png
+  ├── fig2_temporal.png
+  ├── fig3_latency.png
+  ├── fig4_quality_vs_speed.png
+  ├── fig5_per_query_heatmap.png
+  └── fig6_time_vs_quality_bubble.png
+```
+
+The six canonical figures are also copied to `figures/` at the project root after each run.
 
 ### Generate search metrics and charts
 

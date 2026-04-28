@@ -1,0 +1,1771 @@
+{
+  "metadata": {
+    "name": "curia-rigorous-temporal",
+    "version": "1.1",
+    "label_status": "heuristic-auto",
+    "notes": "Auto-derived from scraped/events.json with quality filtering and emphasis on date/time boundary extraction"
+  },
+  "cases": [
+    {
+      "id": "RIG-TMP-001A",
+      "query": "events on 2026-03-31 about alcohol drug",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "alcohol",
+          "drug",
+          "harm"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/197209/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-001B",
+      "query": "alcohol drug on 2026-03-31 after 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "alcohol",
+          "drug",
+          "harm"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "16:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/197209/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-001C",
+      "query": "alcohol drug on 2026-03-31 before 18:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "alcohol",
+          "drug",
+          "harm"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "18:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/197209/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-002A",
+      "query": "events on 2026-03-31 about community conversation",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversation",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198606/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-002B",
+      "query": "community conversation on 2026-03-31 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversation",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198606/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-002C",
+      "query": "community conversation on 2026-03-31 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversation",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198606/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-003A",
+      "query": "events on 2026-03-31 about community conversations",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversations",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198547/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-003B",
+      "query": "community conversations on 2026-03-31 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversations",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198547/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-003C",
+      "query": "community conversations on 2026-03-31 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "conversations",
+          "caps"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198547/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-004A",
+      "query": "events on 2026-03-31 about birthday party",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "birthday",
+          "party"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198728/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-004B",
+      "query": "birthday party on 2026-03-31 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "birthday",
+          "party"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198728/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-004C",
+      "query": "birthday party on 2026-03-31 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "birthday",
+          "party"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198728/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-005A",
+      "query": "events on 2026-03-31 about dared dream",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "dared",
+          "dream",
+          "screening"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198107/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-005B",
+      "query": "dared dream on 2026-03-31 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "dared",
+          "dream",
+          "screening"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198107/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-005C",
+      "query": "dared dream on 2026-03-31 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "dared",
+          "dream",
+          "screening"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/198107/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-006A",
+      "query": "events on 2026-03-31 about thompson forum",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "thompson",
+          "forum",
+          "americas"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/193850/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-006B",
+      "query": "thompson forum on 2026-03-31 after 18:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "thompson",
+          "forum",
+          "americas"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": "18:30",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/193850/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-006C",
+      "query": "thompson forum on 2026-03-31 before 20:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "thompson",
+          "forum",
+          "americas"
+        ],
+        "date_from": "2026-03-31",
+        "date_to": "2026-03-31",
+        "time_from": null,
+        "time_to": "20:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/03/31/193850/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-007A",
+      "query": "events on 2026-04-01 about servsafe training",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "servsafe",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197086/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-007B",
+      "query": "servsafe training on 2026-04-01 after 08:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "servsafe",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "08:30",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197086/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-007C",
+      "query": "servsafe training on 2026-04-01 before 10:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "servsafe",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "10:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197086/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-008A",
+      "query": "events on 2026-04-01 about conference great",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "conference",
+          "great",
+          "plains"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195641/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-008B",
+      "query": "conference great on 2026-04-01 after 09:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "conference",
+          "great",
+          "plains"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "09:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195641/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-008C",
+      "query": "conference great on 2026-04-01 before 11:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "conference",
+          "great",
+          "plains"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195641/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-009A",
+      "query": "events on 2026-04-01 about great plains",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198727/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-009B",
+      "query": "great plains on 2026-04-01 after 09:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "09:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198727/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-009C",
+      "query": "great plains on 2026-04-01 before 11:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "great",
+          "plains",
+          "talk"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "11:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198727/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-010A",
+      "query": "events on 2026-04-01 about community care",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "care",
+          "days"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195719/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-010B",
+      "query": "community care on 2026-04-01 after 11:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "care",
+          "days"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "11:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195719/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-010C",
+      "query": "community care on 2026-04-01 before 13:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "community",
+          "care",
+          "days"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "13:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195719/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-011A",
+      "query": "events on 2026-04-01 about food trucks",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "trucks",
+          "nic"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198261/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-011B",
+      "query": "food trucks on 2026-04-01 after 11:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "trucks",
+          "nic"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "11:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198261/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-011C",
+      "query": "food trucks on 2026-04-01 before 13:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "trucks",
+          "nic"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "13:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198261/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-012A",
+      "query": "events on 2026-04-01 about healthieru sound",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "healthieru",
+          "sound",
+          "bath"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197047/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-012B",
+      "query": "healthieru sound on 2026-04-01 after 12:15",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "healthieru",
+          "sound",
+          "bath"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "12:15",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197047/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-012C",
+      "query": "healthieru sound on 2026-04-01 before 14:15",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "healthieru",
+          "sound",
+          "bath"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "14:15",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197047/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-013A",
+      "query": "events on 2026-04-01 about cas career",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "cas",
+          "career",
+          "ins"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195934/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-013B",
+      "query": "cas career on 2026-04-01 after 13:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "cas",
+          "career",
+          "ins"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "13:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195934/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-013C",
+      "query": "cas career on 2026-04-01 before 15:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "cas",
+          "career",
+          "ins"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "15:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195934/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-014A",
+      "query": "events on 2026-04-01 about instagram global",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "instagram",
+          "global",
+          "experiences"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195888/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-014B",
+      "query": "instagram global on 2026-04-01 after 14:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "instagram",
+          "global",
+          "experiences"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "14:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195888/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-014C",
+      "query": "instagram global on 2026-04-01 before 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "instagram",
+          "global",
+          "experiences"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/195888/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-015A",
+      "query": "events on 2026-04-01 about food support",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "support",
+          "snap"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197544/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-015B",
+      "query": "food support on 2026-04-01 after 14:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "support",
+          "snap"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "14:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197544/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-015C",
+      "query": "food support on 2026-04-01 before 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "food",
+          "support",
+          "snap"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197544/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-016A",
+      "query": "events on 2026-04-01 about venture competition",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "venture",
+          "competition",
+          "effectively"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197558/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-016B",
+      "query": "venture competition on 2026-04-01 after 14:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "venture",
+          "competition",
+          "effectively"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "14:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197558/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-016C",
+      "query": "venture competition on 2026-04-01 before 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "venture",
+          "competition",
+          "effectively"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197558/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-017A",
+      "query": "events on 2026-04-01 about pivot database",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198580/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-017B",
+      "query": "pivot database on 2026-04-01 after 14:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "14:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198580/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-017C",
+      "query": "pivot database on 2026-04-01 before 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "pivot",
+          "database",
+          "training"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198580/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-018A",
+      "query": "events on 2026-04-01 about spring hours",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "spring",
+          "hours"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196774/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-018B",
+      "query": "spring hours on 2026-04-01 after 14:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "spring",
+          "hours"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "14:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196774/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-018C",
+      "query": "spring hours on 2026-04-01 before 16:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "spring",
+          "hours"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "16:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196774/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-019A",
+      "query": "events on 2026-04-01 about reading roque",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "reading",
+          "roque",
+          "raquel"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197510/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-019B",
+      "query": "reading roque on 2026-04-01 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "reading",
+          "roque",
+          "raquel"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197510/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-019C",
+      "query": "reading roque on 2026-04-01 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "reading",
+          "roque",
+          "raquel"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/197510/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-020A",
+      "query": "events on 2026-04-01 about start conversation",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "start",
+          "conversation",
+          "saam"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198771/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-020B",
+      "query": "start conversation on 2026-04-01 after 17:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "start",
+          "conversation",
+          "saam"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "17:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198771/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-020C",
+      "query": "start conversation on 2026-04-01 before 19:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "start",
+          "conversation",
+          "saam"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "19:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198771/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-021A",
+      "query": "events on 2026-04-01 about otoe missouria",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "otoe",
+          "missouria",
+          "history"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198087/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-021B",
+      "query": "otoe missouria on 2026-04-01 after 17:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "otoe",
+          "missouria",
+          "history"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "17:30",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198087/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-021C",
+      "query": "otoe missouria on 2026-04-01 before 19:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "otoe",
+          "missouria",
+          "history"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "19:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198087/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-022A",
+      "query": "events on 2026-04-01 about yoga climbers",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "yoga",
+          "climbers"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196636/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-022B",
+      "query": "yoga climbers on 2026-04-01 after 17:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "yoga",
+          "climbers"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "17:30",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196636/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-022C",
+      "query": "yoga climbers on 2026-04-01 before 19:30",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "yoga",
+          "climbers"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "19:30",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/196636/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-023A",
+      "query": "events on 2026-04-01 about danish maqbool",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "danish",
+          "maqbool"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198775/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-023B",
+      "query": "danish maqbool on 2026-04-01 after 18:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "danish",
+          "maqbool"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "18:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198775/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-023C",
+      "query": "danish maqbool on 2026-04-01 before 20:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "danish",
+          "maqbool"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "20:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198775/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    },
+    {
+      "id": "RIG-TMP-024A",
+      "query": "events on 2026-04-01 about late dish",
+      "tags": [
+        "date",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "late",
+          "dish",
+          "understanding"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198229/"
+        ]
+      },
+      "notes": "Date + topical intent for exact date extraction and retrieval verification"
+    },
+    {
+      "id": "RIG-TMP-024B",
+      "query": "late dish on 2026-04-01 after 18:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "late",
+          "dish",
+          "understanding"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": "18:00",
+        "time_to": null,
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198229/"
+        ]
+      },
+      "notes": "Lower time-bound extraction from explicit date/time phrase"
+    },
+    {
+      "id": "RIG-TMP-024C",
+      "query": "late dish on 2026-04-01 before 20:00",
+      "tags": [
+        "date",
+        "time",
+        "topic",
+        "temporal"
+      ],
+      "expected": {
+        "keywords": [
+          "late",
+          "dish",
+          "understanding"
+        ],
+        "date_from": "2026-04-01",
+        "date_to": "2026-04-01",
+        "time_from": null,
+        "time_to": "20:00",
+        "relevant_event_urls": [
+          "https://events.unl.edu/2026/04/01/198229/"
+        ]
+      },
+      "notes": "Upper time-bound extraction with strict HH:MM format"
+    }
+  ]
+}
