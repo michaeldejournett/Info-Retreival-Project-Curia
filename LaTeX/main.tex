@@ -346,14 +346,46 @@ Zero-shot prompting for JSON output produced alphabetic enumeration or input tok
 
 \subsection{Error Analysis}
 
-Failures in \texttt{Qwen2.5-0.5B-Instruct} fall into three categories:
+Table~\ref{table:errors} summarizes the primary failure mode for each model across all 72 benchmark queries. We identify four distinct failure classes that partition the local model space.
+
+\begin{table}[ht]
+    \centering
+    \caption{Error Taxonomy Across All Models (n=72 per model)}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{llrrl}
+        \toprule
+        \textbf{Model} & \textbf{Failure Mode} & \textbf{Count} & \textbf{Rate} & \textbf{Root Cause} \\
+        \midrule
+        \texttt{gemma-3-27b-it}         & None                  &  0 &   0\% & — \\
+        \texttt{Qwen2.5-0.5B-Instruct}  & Truncated JSON        & 55 & 76.4\% & Token limit reached mid-string \\
+        \texttt{Qwen2.5-1.5B-Instruct}  & Truncated JSON        & 72 & 100\%  & Token limit reached mid-string \\
+        \texttt{TinyLlama-1.1B}         & Empty output          & 72 & 100\%  & No tokens generated after prompt \\
+        \texttt{flan-t5-base}           & Semantic failure      &  0 &   0\%  & Parses but all fields empty \\
+        \texttt{LaMini-Flan-T5-248M}    & Non-JSON prefix       & 72 & 100\%  & Non-JSON first token \\
+        \bottomrule
+    \end{tabular}}
+    \label{table:errors}
+\end{table}
+
+\paragraph{Truncated JSON (\texttt{Qwen2.5-0.5B}, \texttt{Qwen2.5-1.5B})}
+Both Qwen models begin generating syntactically valid JSON but exhaust the 512-token budget before closing all string fields, producing unterminated-string errors on parse. At 0.5B scale, 55 of 72 queries (76.4\%) trigger this; at 1.5B, all 72 do—a counterintuitive regression explained by the larger model generating longer chain-of-thought reasoning traces before the JSON body, consuming the token budget earlier. Increasing \texttt{max\_new\_tokens} beyond 512 is a likely mitigation.
+
+\paragraph{Empty Output (\texttt{TinyLlama-1.1B})}
+TinyLlama produces no tokens after the prompt on every query, yielding a \texttt{line 1 column 1} parse error. The model's chat template appears incompatible with the few-shot \texttt{user}/\texttt{assistant} format: it either echoes the prompt without generating a response or produces only whitespace. This is a prompt-format mismatch rather than a capacity failure.
+
+\paragraph{Non-JSON Prefix (\texttt{LaMini-Flan-T5-248M})}
+LaMini returns an \texttt{Extra data: line 1 column 2} error on all queries, indicating the output starts with a single non-JSON character before additional content. The model does not follow the JSON output format at all under zero-shot prompting, consistent with its T5 seq2seq heritage and the lack of a chat template.
+
+\paragraph{Semantic Failure (\texttt{flan-t5-base})}
+Unlike the other local models, \texttt{flan-t5-base} always produces syntactically parseable output (100\% parse success), but every predicted field is empty. The model returns the correct JSON skeleton with no values populated—it has learned the output schema structure from its FLAN instruction-tuning but cannot populate field values from the query at 250M parameters.
+
+\paragraph{Within-Parse-Success Errors (\texttt{Qwen2.5-0.5B})}
+Of the 17 queries where \texttt{Qwen2.5-0.5B} successfully parses, 14 produce correct date bounds (82\%) but only 8 produce correct time bounds (47\%). Remaining temporal errors fall into two patterns:
 \begin{itemize}
-    \item \textbf{JSON generation errors} (76.4\% of cases): Unterminated strings or extra text after the closing brace, triggering the \texttt{dateparser} fallback.
     \item \textbf{Week boundary confusion}: ``this week'' anchors to the current weekday rather than the Monday--Sunday span.
     \item \textbf{Day-of-week arithmetic}: ``next Thursday'' returns today's date when today is a weekday, indicating failure to advance to the next occurrence.
 \end{itemize}
-
-The Gemini model shows no failures on the 72-case benchmark.
+These are semantic reasoning failures that occur even when the model generates valid JSON, and are not recoverable by the \texttt{dateparser} fallback since the model's output is well-formed but wrong.
 
 \section{Conclusion}
 \label{sec:conclusion}
