@@ -63,7 +63,7 @@ Curia is a campus event search system for University of Nebraska--Lincoln that p
 
 We compare a remote reference model (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) against five local candidates (248M--1.5B) on a rigorous benchmark of 72 labeled temporal queries derived from real UNL event data. Gemma achieves 100\% JSON parse success and 100\% temporal exact-match accuracy, with a Mean Reciprocal Rank (MRR) of 0.650.
 
-Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range on consumer CPU. Finally, a lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword lists for all model paths in under 50\,ms, improving semantic coverage without increasing the primary model size.
+Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range. Finally, a lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword lists for all model paths in under 50\,ms, improving semantic coverage without increasing the primary model size.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -73,11 +73,11 @@ Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial 
 \section{Introduction}
 \label{sec:intro}
 
-Event search systems depend on two query-understanding capabilities: extracting and expanding intent-bearing keywords for retrieval, and grounding temporal expressions into structured date and time bounds. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic, a relative date anchor, and a time lower bound. Converting this free-form input into structured filters drives retrieval quality.
+Curia's natural language search system depends on two query-understanding capabilities: extracting and expanding intent-bearing keywords for retrieval, and grounding temporal expressions into structured date and time bounds. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic, a relative date anchor, and a time lower bound. Converting this free-form input into structured filters drives retrieval quality.
 
-In practice, interactive search must operate under tight memory and latency budgets, which pushes deployment toward smaller models. This raises a central design tension: how far can the underlying model be reduced before these extraction behaviors degrade enough to harm retrieval? Prior work on neural scaling laws~\cite{kaplan2020scaling,hoffmann2022training} suggests that capabilities can decline unevenly as capacity decreases, and the effect is often amplified when the task requires reliable structured output.
+In practice, the search must operate under tight memory and latency budgets, which pushes deployment toward smaller models. This raises a central design tension: how far can the underlying model be reduced before these extraction behaviors degrade enough to harm retrieval? Prior work on neural scaling laws~\cite{kaplan2020scaling,hoffmann2022training} suggests that capabilities can decline unevenly as capacity decreases, and the effect is often amplified when the task requires reliable structured output.
 
-This paper studies that tension directly in Curia, a campus event search system for UNL. Rather than targeting architectural novelty, we measure how model capacity affects the two core tasks that drive retrieval: keyword expansion and temporal grounding. We focus on four research questions:
+This paper studies that tension directly in Curia, a campus event search system for UNL. Rather than targeting architectural novelty, we measure how model size affects the two core tasks that drive retrieval: keyword expansion and temporal grounding. We focus on four research questions:
 \begin{enumerate}
     \item Does the gap between the two tasks, temporal grounding and keyword expansion, begin to diverge as model size decreases?
     \item At what point can our structured prompt no longer produce usable results?
@@ -85,7 +85,7 @@ This paper studies that tension directly in Curia, a campus event search system 
     \item What model size offers the best tradeoff among stability, accuracy, and latency?
 \end{enumerate}
 
-Our experiments show asymmetric degradation. Keyword expansion remains partially functional at 500M parameters, while temporal structured output collapses entirely below that scale. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
+Our experiments show asymmetric degradation. Keyword expansion remains partially functional at 500M parameters, while temporal structured output collapses entirely below that size. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
 
 This paper makes three contributions:
 \begin{itemize}
