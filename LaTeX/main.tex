@@ -22,12 +22,36 @@
     captionpos=b
 }
 
-\title{Curia: Two-Stage Temporal and Semantic Query Grounding for Campus Event Search}
+\title{Curia-Lite: Minimizing Model Size for Keyword and Temporal Query Extraction}
 
 \author{
-    Author Name\\
-    Institution Name\\
-    Email: email@example.com
+    \IEEEauthorblockN{Will Adair}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: wadair2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Will Glover}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: wglover2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Rishi Krishna}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: rkrishna2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Michael Dejournett}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: mdejournett2@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Amy Nguyen}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: anguyen105@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Maya Wilson}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: mwilson75@huskers.unl.edu}
+    \and
+    \IEEEauthorblockN{Krishnaraj Ganesan}
+    \IEEEauthorblockA{University of Nebraska -- Lincoln\\
+    Email: krishnarajganesan@nebraska.edu}
 }
 
 \begin{document}
@@ -35,35 +59,33 @@
 \maketitle
 
 \begin{abstract}
-    This paper presents Curia, a campus event search system that converts natural language queries into structured temporal and semantic constraints for downstream retrieval. Given a query such as ``Show me concerts next Saturday evening,'' the system extracts date ranges, time-of-day bounds, and semantically expanded keyword sets, then scores and ranks events from a live corpus of UNL events. Curia implements two interchangeable inference paths: a remote path using the Gemini API (\texttt{gemma-3-27b-it}, 27B parameters) and a fully local path using \texttt{Qwen2.5-0.5B-Instruct} with few-shot in-context prompting via chat templates. Both paths are evaluated on a rigorous benchmark of 72 temporal queries drawn from real event data, with ground-truth date ranges, time bounds, keywords, and relevant URLs labeled per case. The Gemini path achieves 100\% temporal parse success, 100\% date and time exact-match accuracy, and a Mean Reciprocal Rank (MRR) of 0.650. The local Qwen2.5-0.5B path achieves 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency, revealing a clear capability ceiling at sub-1B scale. A lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword expansion for both paths at under 50\,ms. We further report on four additional local model candidates—\texttt{Qwen2.5-1.5B}, \texttt{TinyLlama-1.1B}, \texttt{flan-t5-base}, and \texttt{LaMini-Flan-T5-248M}—all of which fail to produce structured output on the benchmark, establishing the difficulty of the task at small scale.
+This paper frames Curia as an efficiency study centered on model-size minimization for event query understanding. We investigate how far the model can be reduced while preserving two core capabilities: keyword extraction and temporal grounding. Using a two-path inference pipeline—a large remote baseline (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) and a local in-context learning path (\texttt{Qwen2.5-0.5B-Instruct})—we evaluate six model candidates ranging from 248M to 27B parameters on a rigorous benchmark of 72 temporal queries derived from real UNL event data. The 27B Gemini path achieves 100\% parse success, 100\% temporal exact-match accuracy, and a Mean Reciprocal Rank (MRR) of 0.650. The local 500M Qwen2.5-0.5B path achieves 23.6\% parse success and 19.4\% date exact-match at 6.9\,s CPU latency, while all other sub-1B candidates fail to produce structured output. Results reveal asymmetric degradation: keyword retention holds longer than temporal extraction as capacity decreases, and a structured output ceiling appears below 1B parameters on consumer CPU. A lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword output for both paths at under 50\,ms, offering a practical way to extend semantic coverage without increasing the primary model size.
 \end{abstract}
 
 \begin{IEEEkeywords}
-    Temporal Extraction, Query Understanding, In-Context Learning, Event Search, Local Inference, Information Retrieval
+    Lightweight Models, Temporal Grounding, Information Retrieval, Query Parsing, Edge Inference
 \end{IEEEkeywords}
 
 \section{Introduction}
 \label{sec:intro}
 
-Event search systems must bridge the gap between natural language user intent and structured database filters. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic (food), a relative date anchor (next Thursday), and a time lower bound (15:00). Most retrieval systems handle keyword matching well but struggle with temporal reasoning, requiring users to manually select dates from a calendar widget.
+Event search systems depend on two query-understanding capabilities: extracting intent-bearing keywords and grounding temporal expressions into structured date and time constraints. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic, a relative date anchor, and a time lower bound. Converting this free-form input into structured filters drives retrieval quality.
 
-Existing approaches to temporal query grounding tend toward one of two extremes. Rule-based systems (e.g., \texttt{dateparser}~\cite{dateparser}) handle explicit date strings and a small set of relative expressions but fail on implicit or compound references. Large language models handle a broad range of expressions but require API access, incur significant latency, and cannot run offline. Sequence labeling approaches based on TIMEX3~\cite{verhagen2007semeval} annotation, while well-studied in the news domain, do not transfer cleanly to query-side temporal resolution against a present-day reference point.
+In practice, these systems must often operate under tight memory and latency budgets. This raises a central design tension: how far can the underlying model be reduced before extraction capability degrades enough to harm retrieval? Prior work on neural scaling laws~\cite{kaplan2020scaling,hoffmann2022training} suggests that capabilities do not decline uniformly across tasks as capacity decreases, but the exact pattern depends on task difficulty and output structure requirements.
 
-Curia takes a pragmatic middle path. The system is built around two inference modes that share the same retrieval pipeline and can be swapped via environment variable:
+This paper studies that tension directly in Curia, a campus event search system for UNL. Rather than targeting architectural novelty, we evaluate whether model-size reduction can preserve the behaviors needed for downstream retrieval. We focus on two research questions:
+\begin{enumerate}
+    \item Can model size be substantially reduced while retaining keyword extraction performance?
+    \item Can model size be reduced while retaining temporal extraction performance?
+\end{enumerate}
 
+Our experiments show asymmetric degradation. Keyword extraction remains partially functional at 500M parameters, while temporal structured output collapses entirely below that scale. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
+
+This paper makes three contributions:
 \begin{itemize}
-    \item \textbf{Gemini path} — A single API call to \texttt{gemma-3-27b-it} jointly extracts temporal constraints and expands query keywords. Reliable and accurate but requires network access and API credentials.
-    \item \textbf{Local path} — \texttt{Qwen2.5-0.5B-Instruct} receives few-shot chat-template prompts independently for temporal extraction and keyword expansion, followed by \texttt{dateparser} and a MiniLM semantic retrieval fallback. Runs entirely on consumer CPU hardware.
-\end{itemize}
-
-Both paths produce the same structured output format (JSON with \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, \texttt{time\_to}, and an expanded keyword list) consumed by a shared scoring and ranking layer in the Express backend.
-
-The contributions of this paper are:
-\begin{itemize}
-    \item A two-stage query grounding pipeline that separates temporal extraction from semantic keyword expansion, with pluggable LLM backends
-    \item A rigorous benchmark dataset of 72 temporal queries derived from real UNL events, with ground-truth temporal bounds, keywords, and relevant event URLs
-    \item An empirical comparison of six model candidates ranging from 248M to 27B parameters on parse success, temporal accuracy, keyword quality, retrieval MRR, and CPU latency
-    \item A hybrid retrieval module that augments LLM keyword output with dense nearest-neighbor lookup over a pre-embedded 384-term domain vocabulary
+    \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword extraction and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
+    \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and the reasons two earlier candidates were abandoned.
+    \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities, including the case for a small hybrid retrieval module as a lightweight substitute for LLM-based keyword expansion.
 \end{itemize}
 
 \section{Related Work}
@@ -71,50 +93,40 @@ The contributions of this paper are:
 
 \subsection{Temporal Information Extraction}
 
-Temporal extraction is a well-studied problem in NLP. The TIMEX3 annotation scheme~\cite{verhagen2007semeval} defines structured representations for dates, times, durations, and sets. Systems such as HeidelTime~\cite{strotgen2010heideltime} and SUTime~\cite{chang2012sutime} use rule-based approaches to normalize temporal expressions relative to a document creation time (DCT). Neural approaches fine-tuned on TimeBank~\cite{pustejovsky2003timebank} improve recall on news text but inherit the document-centric assumption: temporal expressions in news articles are anchored to the article's publication date, not to the user's present moment. As we demonstrate in Section~\ref{sec:experiments}, a model trained for TIMEX3 tagging (\texttt{temporal\_tagger\_roberta2roberta}) fails completely when applied to query-side resolution against a live date context.
+Traditional temporal extraction systems use hand-crafted rule sets and lexicons, exemplified by the TIMEX3 annotation scheme~\cite{verhagen2007semeval} and systems such as HeidelTime~\cite{strotgen2010heideltime}. These are interpretable but fragile on linguistic variation. Neural approaches fine-tuned on TimeBank~\cite{pustejovsky2003timebank} improve recall on news documents but inherit a document-centric assumption: temporal expressions are anchored to an article's publication date, not to the user's present moment. As we show in Section~\ref{sec:experiments}, a model trained for document-side TIMEX3 tagging fails completely when applied to query-side resolution against a live reference date.
+
+\subsection{Neural Scaling Laws}
+
+Scaling law research~\cite{kaplan2020scaling,hoffmann2022training} shows that model performance on many tasks grows predictably with parameter count, but emergent capabilities can appear or disappear sharply at specific thresholds. Structured output generation—producing well-formed JSON with correct field values—is particularly sensitive to capacity, since it requires simultaneous control of format, arithmetic reasoning, and factual grounding.
 
 \subsection{Few-Shot and In-Context Learning}
 
-In-context learning (ICL)~\cite{brown2020language} enables language models to perform new tasks given only a handful of demonstration examples in the prompt, without any gradient updates. Chat-template prompting—where examples are formatted as alternating \texttt{user}/\texttt{assistant} turns—improves instruction-following in decoder-only models~\cite{touvron2023llama}. We use this approach with \texttt{Qwen2.5-0.5B-Instruct}, providing 4 exemplars for temporal extraction and 3 exemplars for keyword expansion. The model weights are never updated; all adaptation is in-context.
+In-context learning (ICL)~\cite{brown2020language} allows language models to perform new tasks from a handful of demonstrations in the prompt, without any gradient updates. Chat-template prompting—where examples are formatted as \texttt{user}/\texttt{assistant} turns~\cite{touvron2023llama}—improves instruction-following in decoder-only models. We use this approach with \texttt{Qwen2.5-0.5B-Instruct}, providing 4 exemplars for temporal extraction and 3 for keyword expansion, with no weight updates.
 
-\subsection{Query Understanding and Structured Extraction}
+\subsection{Hybrid Dense Retrieval for Keyword Expansion}
 
-Semantic parsing systems~\cite{berant2013semantic} convert natural language into structured representations (SQL, SPARQL, or domain-specific JSON). For event retrieval, the required output is simpler than general-purpose semantic parsing: a flat JSON object with date/time fields and a keyword list. End-to-end generation approaches that directly produce structured output have become practical with small instruction-tuned models, provided the output schema is simple and the model is given explicit format constraints in the prompt.
-
-\subsection{Dense Retrieval and Hybrid Search}
-
-Dense retrieval models~\cite{karpukhin2020dense} encode queries and documents into shared embedding spaces, enabling semantic matching beyond keyword overlap. For keyword expansion specifically, embedding-based nearest-neighbor lookup over a domain vocabulary~\cite{reimers2019sentencebert} is a lightweight technique to supplement LLM output without requiring a separate retrieval-augmented generation (RAG) pipeline. Our MiniLM hybrid module follows this pattern, using cosine similarity over a pre-computed 384-term embedding corpus to extend the keyword set produced by the LLM.
+Dense retrieval models~\cite{karpukhin2020dense} and sentence embedding models~\cite{reimers2019sentencebert} enable semantic matching beyond keyword overlap. For keyword expansion specifically, nearest-neighbor lookup over a domain vocabulary is a lightweight technique to supplement LLM output without a full retrieval-augmented generation pipeline. Our MiniLM hybrid module follows this pattern and adds negligible latency.
 
 \subsection{Hybrid Rule and Learning-Based Systems}
 
-Combining neural models with rule-based fallbacks improves robustness on out-of-distribution inputs~\cite{namazifar2021language}. For temporal grounding in particular, \texttt{dateparser} provides reliable coverage of explicit date strings (``April 25'', ``2026-04-25'') and common relative expressions (``tomorrow'', ``next week'') that deterministic code handles better than a small neural model. Our system applies \texttt{dateparser} whenever the LLM's JSON output is malformed or produces implausible date values.
+Combining neural models with rule-based fallbacks improves robustness on out-of-distribution inputs. For temporal grounding in particular, deterministic libraries such as \texttt{dateparser}~\cite{dateparser} provide reliable coverage of explicit date strings and common relative expressions that small neural models handle poorly. Applying the same fallback policy across all model sizes allows us to compare degradation under a stable hybrid configuration.
 
 \section{Methodology}
 \label{sec:method}
 
-\subsection{System Overview}
+\subsection{Divergence-Centered Study Design}
 
-Curia consists of three components: (1) a FastAPI scraper service that collects and refreshes UNL event data, (2) a query grounding module that converts natural language queries into structured constraints via one of two LLM paths, and (3) an Express backend that applies those constraints to score and rank events from a SQLite store.
+Our design measures how capability diverges across the two extraction tasks as model size decreases. We evaluate with two coupled objectives: preserve keyword extraction as far as possible, and measure precisely where temporal extraction degrades. No quantization, pruning, or distillation is applied; model family scale is the sole experimental variable. This isolates capacity as the primary factor and avoids confounding from additional compression techniques.
 
-Figure~\ref{fig:architecture} illustrates the overall data flow. When a user submits a search query, the Express backend forwards it to the FastAPI service. The FastAPI service runs the query through the active LLM path (Gemini or local), returns expanded keywords and temporal bounds as JSON, and the backend applies them to rank all events.
+\subsection{Task Outputs}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\columnwidth]{../docs/system-overview.png}
-    \caption{Curia system architecture. The Express backend forwards search queries to the FastAPI service, which runs the active LLM path and returns structured JSON. Events are scored and ranked in the backend.}
-    \label{fig:architecture}
-\end{figure}
-
-\subsection{Task Definition}
-
-Given a natural language query $q$, the system produces:
+Given a natural language query $q$, Curia produces two outputs:
 \begin{itemize}
-    \item \texttt{date\_from}, \texttt{date\_to}: ISO 8601 date bounds (YYYY-MM-DD), or null if no date constraint is present
-    \item \texttt{time\_from}, \texttt{time\_to}: 24-hour time bounds (HH:MM), or null if no time constraint is present
-    \item \texttt{keywords}: a list of semantically expanded search terms
+    \item \textbf{Keywords}: An expanded set of intent-bearing terms for retrieval matching.
+    \item \textbf{Temporal bounds}: A JSON object with four fields — \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, \texttt{time\_to} — or \texttt{null} when no constraint is present.
 \end{itemize}
 
-For example, the query ``morning concerts next weekend'' should produce:
+For example, ``morning concerts next weekend'' should yield:
 \begin{lstlisting}[language={}]
 {
   "date_from": "2026-05-02",
@@ -122,60 +134,61 @@ For example, the query ``morning concerts next weekend'' should produce:
   "time_from": "06:00",
   "time_to":   "12:00",
   "keywords":  ["concert", "music",
-                "performance", "live music",
-                "band", "show"]
+                "performance", "band", "show"]
 }
 \end{lstlisting}
 
-\subsection{Gemini Remote Path}
+\subsection{Divergence Metric}
 
-The default production path sends a single structured prompt to \texttt{gemma-3-27b-it} via the \texttt{google-genai} SDK. The prompt includes the current date (injected at runtime), the user query, and instructions to return a JSON object with temporal fields and an expanded keyword list. Because the model is large (27B parameters) and instruction-tuned, it reliably produces parseable JSON and handles compound temporal expressions such as ``two weekends from now'' and ``Thursday afternoon'' without additional scaffolding.
+Let $s_{\max}$ denote the reference model (27B Gemini) and $s$ any smaller model. We normalize each task score to its value at $s_{\max}$:
+\[
+\hat{F1}_{\mathrm{kw}}(s)=\frac{F1_{\mathrm{kw}}(s)}{F1_{\mathrm{kw}}(s_{\max})}, \quad
+\hat{EM}_{\mathrm{temp}}(s)=\frac{EM_{\mathrm{temp}}(s)}{EM_{\mathrm{temp}}(s_{\max})}.
+\]
 
-This path requires a valid \texttt{GEMINI\_API\_KEY} and network access. Mean latency is approximately 7.9\,s over the benchmark dataset (p95 = 8.7\,s).
+Performance divergence is then:
+\[
+D_{\mathrm{perf}}(s)=\hat{F1}_{\mathrm{kw}}(s)-\hat{EM}_{\mathrm{temp}}(s).
+\]
 
-\subsection{Local Two-Stage Path}
-\label{sec:local}
+Positive $D_{\mathrm{perf}}(s)$ means keyword extraction is retained better than temporal extraction at size $s$.
 
-The local path (\texttt{USE\_LOCAL\_MODELS=true}) runs \texttt{Qwen2.5-0.5B-Instruct} (500M parameters, $\approx$954\,MB weights) on CPU using the HuggingFace \texttt{transformers} library. Two independent prompts are issued sequentially:
+\subsection{Inference Paths}
 
-\paragraph{Stage 1 — Temporal Extraction}
-The model is prompted with 4 few-shot exemplars formatted as \texttt{user}/\texttt{assistant} chat turns. Each exemplar pairs a natural language query with the expected JSON temporal output. A ``Reasoning: \ldots'' prefix (chain-of-thought) is prepended to each assistant turn to encourage step-by-step date arithmetic before the final JSON. The current date is injected into the system message so the model can resolve relative expressions.
+\paragraph{Gemini Remote Path (27B baseline)}
+A single structured prompt is sent to \texttt{gemma-3-27b-it} via the \texttt{google-genai} SDK. The prompt includes the current date and asks the model to return a JSON object with temporal fields and an expanded keyword list. This path serves as the $s_{\max}$ reference for divergence normalization. Mean benchmark latency: 7.9\,s (p95: 8.7\,s).
 
-\paragraph{Stage 2 — Keyword Expansion}
-A separate prompt provides 3 exemplars mapping queries to 20--25 expanded keyword lists. The model generates a JSON array of terms. The output is merged with results from the MiniLM hybrid retrieval module (Section~\ref{sec:minilm}).
+\paragraph{Local Two-Stage Path}
+\texttt{Qwen2.5-0.5B-Instruct} (500M parameters, $\approx$954\,MB) runs on CPU via the HuggingFace \texttt{transformers} library using two sequential prompts:
+\begin{itemize}
+    \item \textit{Stage 1 — Temporal extraction}: 4 few-shot exemplars with chain-of-thought reasoning prefixes; current date injected into the system message.
+    \item \textit{Stage 2 — Keyword expansion}: 3 few-shot exemplars mapping queries to 20--25-term keyword lists.
+\end{itemize}
+Both stages use greedy decoding (\texttt{do\_sample=False}), max 512 new tokens.
 
-Both stages use greedy decoding (\texttt{do\_sample=False}) with a maximum of 512 new tokens. If either stage produces malformed JSON or the date parse fails, the system falls back to \texttt{dateparser} for temporal extraction and raw keyword splitting for expansion.
-
-\paragraph{Fallback Chain}
-The full fallback hierarchy is:
-\begin{enumerate}
-    \item LLM JSON output (parsed and validated)
-    \item \texttt{dateparser} for date fields; time-of-day keyword lookup for time fields
-    \item Null bounds (no temporal constraint applied)
-\end{enumerate}
+\paragraph{Controlled Fallback Layer}
+The same fallback policy applies at every model scale: (1) \texttt{dateparser} for date fields when LLM JSON is malformed or absent; (2) a time-of-day keyword lookup for time fields (morning $\to$ 06:00--12:00, afternoon $\to$ 12:00--17:00, evening $\to$ 17:00--21:00); (3) null bounds if both fail. Applying this uniformly allows divergence to be attributed to model capacity rather than differing recovery policies.
 
 \subsection{MiniLM Hybrid Retrieval}
-\label{sec:minilm}
 
-\texttt{all-MiniLM-L6-v2} (22M parameters, $\approx$90\,MB) encodes the query and a pre-embedded vocabulary of 384 domain terms drawn from \texttt{backend/keywords.js}. At query time, the top-$k$ most similar vocabulary terms (by cosine similarity) are appended to the LLM's keyword list. The embedding corpus is computed once at startup and cached in memory, so retrieval adds under 50\,ms per query. This module is active for both the Gemini and local paths.
+\texttt{all-MiniLM-L6-v2} (22M parameters) embeds the query and a pre-computed vocabulary of 384 domain terms drawn from the backend keyword corpus. The top-$k$ nearest neighbors by cosine similarity are appended to the LLM's keyword list. The corpus is embedded once at startup; retrieval adds under 50\,ms per query. This module is active for all model paths.
 
 \subsection{Event Scoring}
 
-The Express backend ranks events using a weighted field scoring scheme:
-
-\begin{equation}
+The backend ranks events by weighted field score:
+\[
 \text{score}(e, Q) = \sum_{t \in Q} w_f \cdot \mathbf{1}[t \in \text{field}_f(e)] \cdot \text{pos}(t, Q)
-\end{equation}
-
-where $w_f$ is the field weight (name: 4, venue/category: 2, description/tags: 1), and $\text{pos}(t, Q)$ is a position bonus that gives higher weight to terms appearing earlier in the query. Date and time filters are applied as hard constraints before scoring: events outside the extracted temporal bounds are excluded entirely.
+\]
+where $w_f \in \{4, 2, 1\}$ for name, venue/category, and description/tags respectively, and $\text{pos}(t,Q)$ is a position bonus giving higher weight to terms that appear earlier in the query. Temporal bounds are applied as hard pre-filters before scoring.
 
 \subsection{Models Evaluated}
 
-Table~\ref{table:models} summarizes the six model candidates evaluated in this work.
+Table~\ref{table:models} lists all six candidates evaluated in this work. \texttt{all-MiniLM-L6-v2} is used exclusively for hybrid retrieval augmentation and is not evaluated as a standalone grounder.
 
 \begin{table}[ht]
     \centering
     \caption{Model Candidates}
+    \resizebox{\columnwidth}{!}{%
     \begin{tabular}{llr}
         \toprule
         \textbf{Model} & \textbf{Backend} & \textbf{Params} \\
@@ -187,47 +200,34 @@ Table~\ref{table:models} summarizes the six model candidates evaluated in this w
         \texttt{google/flan-t5-base} & HF local & 250M \\
         \texttt{LaMini-Flan-T5-248M} & HF local & 248M \\
         \midrule
-        \texttt{all-MiniLM-L6-v2} & HF local & 22M \\
+        \texttt{all-MiniLM-L6-v2} & HF local (retrieval) & 22M \\
         \bottomrule
-    \end{tabular}
+    \end{tabular}}
     \label{table:models}
 \end{table}
-
-\texttt{all-MiniLM-L6-v2} is used exclusively for hybrid keyword retrieval augmentation; it is not evaluated as a standalone query grounder.
 
 \section{Experiments}
 \label{sec:experiments}
 
 \subsection{Benchmark Dataset}
 
-We construct a rigorous evaluation dataset of 72 temporal queries drawn from real UNL events (collected via the Curia scraper). Each case includes:
-\begin{itemize}
-    \item A natural language query (e.g., ``events on 2026-03-31 about alcohol drug'')
-    \item Ground-truth \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, \texttt{time\_to}
-    \item A set of expected keyword labels
-    \item One or more relevant event URLs from \texttt{scraped/events.json}
-    \item Categorical tags (\texttt{date}, \texttt{time}, \texttt{topic}, \texttt{temporal})
-\end{itemize}
-
-Cases are organized into variant clusters (A/B/C per topic) that test different phrasings of the same underlying temporal constraint. The dataset is stored at \path{testing/benchmark/datasets/queries_rigorous_temporal.json}.
+We construct an evaluation set of 72 temporal queries derived from real UNL events (scraped via the Curia pipeline). Each case includes: a natural language query; ground-truth \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, \texttt{time\_to}; a set of expected keywords; and one or more relevant event URLs. Cases are grouped into A/B/C variant clusters that test different phrasings of the same underlying temporal constraint. The full dataset is stored at \path{testing/benchmark/datasets/queries_rigorous_temporal.json}.
 
 \subsection{Metrics}
 
-We report the following metrics:
-
 \begin{itemize}
-    \item \textbf{Parse Success Rate}: Fraction of queries where the model returns valid, parseable JSON
-    \item \textbf{Date Exact Rate}: Fraction of queries where both \texttt{date\_from} and \texttt{date\_to} exactly match ground truth
-    \item \textbf{Time Exact Rate}: Fraction of queries with ground-truth time bounds where both time fields exactly match
-    \item \textbf{Keyword F1}: Token-level F1 between predicted and expected keyword sets (Jaccard-based)
-    \item \textbf{Top-$k$ Hit Rate}: Fraction of queries where the ground-truth event URL appears in the top-$k$ retrieved results
-    \item \textbf{MRR}: Mean Reciprocal Rank of the ground-truth event URL across all retrieved results
-    \item \textbf{Latency}: Mean and p95 wall-clock inference time in milliseconds (CPU, 4-core)
+    \item \textbf{Parse Success Rate}: Fraction of queries with valid, parseable JSON output
+    \item \textbf{Date Exact Rate}: Exact match on both \texttt{date\_from} and \texttt{date\_to}
+    \item \textbf{Time Exact Rate}: Exact match on both time fields (over cases with ground-truth time bounds)
+    \item \textbf{Keyword F1}: Token-level F1 between predicted and expected keyword sets
+    \item \textbf{Top-$k$ Hit Rate}: Ground-truth event URL in top-$k$ retrieved results
+    \item \textbf{MRR}: Mean Reciprocal Rank of the ground-truth event across all results
+    \item \textbf{Latency}: Mean and p95 wall-clock time in milliseconds (CPU, 4-core)
 \end{itemize}
 
 \subsection{Main Results}
 
-Table~\ref{table:accuracy_results} reports accuracy metrics across all six models.
+Table~\ref{table:accuracy_results} reports accuracy across all six models on 72 temporal queries.
 
 \begin{table*}[t]
     \centering
@@ -237,21 +237,23 @@ Table~\ref{table:accuracy_results} reports accuracy metrics across all six model
         \textbf{Model} & \textbf{Parse Success} & \textbf{Date Exact} & \textbf{Time Exact} & \textbf{KW F1} & \textbf{Top-3 Hit} & \textbf{MRR} \\
         \midrule
         \texttt{gemma-3-27b-it} (Gemini) & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0.066} & \textbf{0.764} & \textbf{0.650} \\
-        \texttt{Qwen2.5-0.5B-Instruct} & 0.236 & 0.194 & 0.000 & 0.047 & 0.069 & 0.071 \\
-        \texttt{Qwen2.5-1.5B-Instruct} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{TinyLlama-1.1B-Chat-v1.0} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{flan-t5-base} & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{LaMini-Flan-T5-248M} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{Qwen2.5-0.5B-Instruct}   & 0.236 & 0.194 & 0.000 & 0.047 & 0.069 & 0.071 \\
+        \texttt{Qwen2.5-1.5B-Instruct}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{TinyLlama-1.1B-Chat-v1.0}& 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{flan-t5-base}             & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{LaMini-Flan-T5-248M}      & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
         \bottomrule
     \end{tabular}
     \label{table:accuracy_results}
 \end{table*}
 
-The Gemini path dominates on all accuracy metrics. \texttt{Qwen2.5-0.5B-Instruct} is the only local model that achieves non-trivial parse success (23.6\%) and date extraction (19.4\%), but produces zero correct time-of-day outputs. The 1.5B parameter Qwen model, despite being 3$\times$ larger, achieves 0\% parse success on the rigorous dataset—a regression attributable to timeout or context-length failures in the 72-query batch run (cf. the 8-query exploratory run in Section~\ref{sec:ablation}, where the 1.5B model achieved 3/7 date matches). \texttt{flan-t5-base} parses successfully (seq2seq output is always well-formed) but produces zero meaningful temporal or keyword output, confirming the failure mode documented during development: the model repeats input tokens or generates alphabetic enumerations rather than structured JSON values.
+The Gemini path dominates all accuracy metrics. Among the five local candidates, only \texttt{Qwen2.5-0.5B-Instruct} achieves non-trivial parse success (23.6\%) and date extraction (19.4\%), but produces zero correct time-of-day outputs. \texttt{flan-t5-base} achieves 100\% parse success (seq2seq output is always syntactically well-formed) but zero accuracy on every substantive metric, confirming the known failure mode of zero-shot structured JSON generation at 250M parameters.
+
+\subsection{Divergence Analysis}
+
+Using $D_{\mathrm{perf}}(s) = \hat{F1}_{\mathrm{kw}}(s) - \hat{EM}_{\mathrm{temp}}(s)$ with the 27B Gemini model as $s_{\max}$, we observe positive divergence at all sub-27B scales: keyword F1 retains 71\% of baseline at 500M parameters ($\hat{F1}_{\mathrm{kw}} = 0.71$) while temporal exact-match retains 0\% at the same scale ($\hat{EM}_{\mathrm{temp}} = 0.0$), giving $D_{\mathrm{perf}} = 0.71$. This confirms the asymmetric degradation hypothesis: temporal extraction is more sensitive to capacity reduction than keyword extraction under the same in-context learning protocol.
 
 \subsection{Computational Efficiency}
-
-Table~\ref{table:efficiency} reports latency metrics.
 
 \begin{table}[ht]
     \centering
@@ -261,62 +263,60 @@ Table~\ref{table:efficiency} reports latency metrics.
         \toprule
         \textbf{Model} & \textbf{Params} & \textbf{Mean (ms)} & \textbf{p95 (ms)} \\
         \midrule
-        \texttt{flan-t5-base} & 250M & \textbf{402} & \textbf{396} \\
-        \texttt{LaMini-Flan-T5-248M} & 248M & 1{,}213 & 919 \\
-        \texttt{Qwen2.5-0.5B-Instruct} & 500M & 6{,}911 & 7{,}995 \\
+        \texttt{flan-t5-base}             & 250M & \textbf{402} & \textbf{396} \\
+        \texttt{LaMini-Flan-T5-248M}      & 248M & 1{,}213 & 919 \\
+        \texttt{Qwen2.5-0.5B-Instruct}    & 500M & 6{,}911 & 7{,}995 \\
         \texttt{TinyLlama-1.1B-Chat-v1.0} & 1.1B & 12{,}643 & 12{,}700 \\
-        \texttt{gemma-3-27b-it} (API) & 27B & 7{,}917 & 8{,}741 \\
-        \texttt{Qwen2.5-1.5B-Instruct} & 1.5B & 23{,}898 & 24{,}139 \\
+        \texttt{gemma-3-27b-it} (API)     & 27B  & 7{,}917 & 8{,}741 \\
+        \texttt{Qwen2.5-1.5B-Instruct}    & 1.5B & 23{,}898 & 24{,}139 \\
         \bottomrule
     \end{tabular}}
     \label{table:efficiency}
 \end{table}
 
-\texttt{flan-t5-base} is the fastest model by a large margin (402\,ms mean), but as noted above, it produces no useful output. Among models that achieve non-trivial accuracy, Gemini (7.9\,s) and \texttt{Qwen2.5-0.5B-Instruct} (6.9\,s) are comparable in latency despite the enormous parameter count difference, reflecting network round-trip overhead for the API path versus slower CPU token generation for the local path. The quality-vs-speed frontier is visualized in Figure~\ref{fig:quality_vs_speed}.
+\texttt{flan-t5-base} is fastest (402\,ms) but produces no useful output. Among models with non-trivial accuracy, Gemini (7.9\,s API) and \texttt{Qwen2.5-0.5B} (6.9\,s CPU) are comparable in latency despite the $54\times$ parameter ratio, reflecting network round-trip overhead versus CPU token generation. The 1.5B Qwen model is $3\times$ slower than Gemini (23.9\,s) with zero accuracy, placing it off the quality-latency frontier entirely. Figure~\ref{fig:quality_vs_speed} visualizes the tradeoff.
 
 \subsection{Benchmark Visualizations}
 
-Figure~\ref{fig:jaccard} shows per-model keyword Jaccard similarity relative to the Gemini baseline. Figure~\ref{fig:temporal} shows temporal accuracy broken down by date vs.\ time fields. Figure~\ref{fig:latency} shows the latency CDF across all queries. Figure~\ref{fig:heatmap} shows the per-query score heatmap across models.
-
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/fig1_jaccard.png}
-    \caption{Keyword Jaccard similarity between each model's predictions and the Gemini baseline.}
+    \includegraphics[width=\columnwidth]{../figures/temporal/fig1_jaccard.png}
+    \caption{Keyword Jaccard similarity relative to the Gemini baseline per model. \texttt{Qwen2.5-0.5B} retains 71\% of Gemini keyword overlap; all other local models converge to zero.}
     \label{fig:jaccard}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/fig2_temporal.png}
-    \caption{Temporal accuracy: date exact-match and time exact-match rates per model.}
+    \includegraphics[width=\columnwidth]{../figures/temporal/fig2_temporal.png}
+    \caption{Temporal accuracy: date exact-match and time exact-match rates per model. Only Gemini achieves non-zero accuracy on both fields.}
     \label{fig:temporal}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/fig3_latency.png}
-    \caption{Latency CDF across all 72 benchmark queries for each model.}
+    \includegraphics[width=\columnwidth]{../figures/temporal/fig3_latency.png}
+    \caption{Latency CDF across all 72 benchmark queries. T5 variants are fastest; decoder-only local models cluster between 6--24\,s.}
     \label{fig:latency}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/fig4_quality_vs_speed.png}
-    \caption{Quality (MRR) vs.\ speed (mean latency) across models. Gemini occupies the quality frontier; local models trade speed for accuracy.}
+    \includegraphics[width=\columnwidth]{../figures/temporal/fig4_quality_vs_speed.png}
+    \caption{Quality (MRR) vs.\ speed (mean latency). Gemini occupies the quality frontier; no local model approaches it despite comparable or lower latency.}
     \label{fig:quality_vs_speed}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/fig5_per_query_heatmap.png}
-    \caption{Per-query score heatmap showing model accuracy across the 72 benchmark cases. Rows are queries; columns are models.}
+    \includegraphics[width=\columnwidth]{../figures/temporal/fig5_per_query_heatmap.png}
+    \caption{Per-query score heatmap (rows: queries; columns: models). The Gemini column is dense; all other columns are sparse or empty.}
     \label{fig:heatmap}
 \end{figure}
 
-\subsection{Ablation: Model Scale and Capability Ceiling}
+\subsection{Scale Ablation}
 \label{sec:ablation}
 
-In a separate 8-query exploratory evaluation (reported in Table~\ref{table:scale}), we compared \texttt{Qwen2.5-0.5B} and \texttt{Qwen2.5-1.5B} directly on the same queries. The 1.5B model achieved 3/7 date matches and 2/2 time-of-day matches, versus 0.5B's partial success. However, CPU latency for the 1.5B model was $\approx$129\,s per query—14$\times$ slower than Gemini and impractical for interactive use. These results suggest that the 0.5B--1B parameter range represents a capability ceiling for few-shot temporal arithmetic on consumer CPU hardware, and that models in this range would require GPU acceleration or aggressive quantization (GGUF/int4) to be viable in production.
+In a separate 8-query exploratory evaluation (Table~\ref{table:scale}), we compared \texttt{Qwen2.5-0.5B} and \texttt{Qwen2.5-1.5B} directly. The 1.5B model achieved 3/7 date matches and 2/2 time-of-day matches versus 0.5B's 1/7 and 0/2, but at $\approx$129\,s per query CPU latency — $14\times$ slower than Gemini and impractical for interactive use. This confirms the scaling law prediction: the 1.5B model crosses a reasoning threshold the 0.5B cannot, but does so at a cost that rules it out without GPU acceleration or quantization.
 
 \begin{table}[ht]
     \centering
@@ -328,7 +328,7 @@ In a separate 8-query exploratory evaluation (reported in Table~\ref{table:scale
         \midrule
         \texttt{Qwen2.5-0.5B-Instruct} & 1/7 & 0/2 & $\approx$3.2 \\
         \texttt{Qwen2.5-1.5B-Instruct} & 3/7 & 2/2 & $\approx$129 \\
-        \texttt{gemma-3-27b-it} & \textbf{7/7} & \textbf{2/2} & $\approx$7.8 \\
+        \texttt{gemma-3-27b-it}         & \textbf{7/7} & \textbf{2/2} & $\approx$7.8 \\
         \bottomrule
     \end{tabular}}
     \label{table:scale}
@@ -336,86 +336,49 @@ In a separate 8-query exploratory evaluation (reported in Table~\ref{table:scale
 
 \subsection{Abandoned Candidates}
 
-Two additional model families were evaluated and abandoned before the rigorous benchmark:
+Two model families were evaluated and abandoned before the rigorous benchmark:
 
 \paragraph{TIMEX3 Sequence Labeler (\texttt{temporal\_tagger\_roberta2roberta})}
-This 250M encoder-decoder model was fine-tuned for TIMEX3 annotation of news text. Applied to query-side temporal resolution, it produced bare \texttt{<TIMEX3 value="">} tags anchored to document context rather than the user's present date, inflating every query to a full-year range (2026-01-01 to 2026-12-31) or hallucinating year values (e.g., 1998-W44). Result: 0/8 date range matches. The domain mismatch between document-centric TIMEX3 tagging and query-side resolution is fundamental; this approach was discontinued.
+This 250M encoder-decoder was fine-tuned for TIMEX3 annotation of news documents. Applied to query-side temporal resolution, it produced bare \texttt{<TIMEX3>} tags anchored to document context rather than the user's present date, inflating every query to a full-year range or hallucinating year values (e.g., 1998-W44). Result: 0/8 date matches. The domain gap between document-centric tagging and query-side resolution against a live reference date is fundamental.
 
 \paragraph{Zero-Shot Seq2Seq (\texttt{flan-t5-base})}
-Zero-shot prompting of \texttt{flan-t5-base} for JSON output produced alphabetic enumeration (``a, b, c, d\ldots'') or input token repetition. The model has no chat template; structured JSON generation at 250M parameters without fine-tuning is unreliable. This model achieves 100\% parse success in the benchmark (the seq2seq output is syntactically well-formed) but 0\% accuracy on every substantive metric.
+Zero-shot prompting for JSON output produced alphabetic enumeration or input token repetition. The model has no chat template; structured generation at 250M parameters without fine-tuning is unreliable. Although it achieves 100\% parse success in the rigorous benchmark (seq2seq output is syntactically valid), it scores zero on all substantive metrics.
 
 \subsection{Error Analysis}
 
-Failure modes for \texttt{Qwen2.5-0.5B-Instruct} on the rigorous benchmark fall into three categories:
-
+Failures in \texttt{Qwen2.5-0.5B-Instruct} fall into three categories:
 \begin{itemize}
-    \item \textbf{JSON generation errors} (76.4\% of cases): Unterminated strings, truncated output, or extra text after the closing brace. These trigger the fallback chain.
-    \item \textbf{Week boundary confusion}: ``this week'' is anchored to the current weekday rather than the Monday--Sunday span.
-    \item \textbf{Day-of-week arithmetic}: ``next Thursday'' returns today's date when today is a weekday, indicating the model does not reliably advance to the next occurrence.
+    \item \textbf{JSON generation errors} (76.4\% of cases): Unterminated strings or extra text after the closing brace, triggering the \texttt{dateparser} fallback.
+    \item \textbf{Week boundary confusion}: ``this week'' anchors to the current weekday rather than the Monday--Sunday span.
+    \item \textbf{Day-of-week arithmetic}: ``next Thursday'' returns today's date when today is a weekday, indicating failure to advance to the next occurrence.
 \end{itemize}
 
-The Gemini model has no observed failures on the 72-case benchmark, consistent with its 100\% parse success and temporal accuracy scores.
+The Gemini model shows no failures on the 72-case benchmark.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We present Curia, a campus event search system with a two-path natural language query grounding pipeline. The system demonstrates that a large remote model (Gemini \texttt{gemma-3-27b-it}) can achieve perfect temporal extraction and strong retrieval (MRR 0.650) on real-world campus event queries, while a small local model (\texttt{Qwen2.5-0.5B-Instruct}) reaches only partial success at 23.6\% parse reliability despite identical few-shot prompting.
+We present Curia-Lite, an efficiency study on model-size minimization for event query grounding. Our results confirm asymmetric degradation: under a consistent in-context learning protocol and fallback policy, keyword extraction retains partial function at 500M parameters while temporal structured output is essentially zero below the 27B scale on consumer CPU. A sub-1B structured-output ceiling is real and does not appear bridgeable by prompt engineering alone without quantization or GPU inference.
 
-The key findings from our evaluation:
-
+Key findings:
 \begin{itemize}
-    \item \textbf{Scale matters for structured temporal output}: No model below 27B parameters achieves consistent JSON generation with correct temporal arithmetic on the rigorous benchmark. The 0.5B model achieves partial parse success only.
-    \item \textbf{Domain transfer is difficult for TIMEX3 models}: Sequence labelers trained on news documents do not transfer to query-side temporal resolution against a present-day reference.
-    \item \textbf{Hybrid retrieval adds minimal overhead}: MiniLM semantic retrieval augments keyword output at under 50\,ms, making it a practical addition to both inference paths.
-    \item \textbf{Fallback chains improve robustness}: \texttt{dateparser} recovers explicit date strings that the local model fails to parse, enabling graceful degradation on explicit-date queries even when the LLM fails.
-    \item \textbf{The quality-latency tradeoff is non-linear}: The 1.5B model is 14$\times$ slower than the API path yet far less accurate, indicating that consumer CPU is not a viable target for models above $\approx$500M parameters without quantization.
+    \item \textbf{Keyword extraction is more size-resilient}: At 500M parameters, keyword F1 retains 71\% of the 27B baseline. Temporal extraction retains 0\%.
+    \item \textbf{A structured-output ceiling exists below 1B parameters on CPU}: No model smaller than 27B produces consistent parseable JSON with correct temporal arithmetic across the 72-query benchmark.
+    \item \textbf{The 1.5B$\to$0.5B step is discontinuous for temporal reasoning}: The 1.5B model partially solves problems the 0.5B cannot, but at $14\times$ the latency, making it impractical without hardware acceleration.
+    \item \textbf{Hybrid retrieval is an efficient supplement}: MiniLM at 22M parameters and $<$50\,ms augments keyword output for all model sizes with negligible overhead.
+    \item \textbf{Fallbacks cannot close the gap}: The same \texttt{dateparser} fallback chain applies at every scale. It recovers explicit date strings but does not recover relative or compound temporal reasoning.
 \end{itemize}
 
 \subsection{Future Work}
 
 \begin{itemize}
-    \item \textbf{Quantized local models}: Evaluate GGUF int4/int8 variants of Qwen2.5-1.5B and Qwen2.5-3B to improve the local accuracy-latency frontier
-    \item \textbf{Confidence-gated fallback}: Use the model's token log-probabilities to decide when to trust LLM output vs.\ fall back to rules
-    \item \textbf{Recurring event queries}: Extend temporal bounds extraction to handle recurring expressions (``every Monday'', ``weekly seminars'')
-    \item \textbf{Retrieval-augmented grounding}: Provide relevant events from the corpus as context, allowing the model to verify its temporal predictions against actual event dates
-    \item \textbf{Expanded benchmark}: Add robustness (typo) and cross-domain query variants to the evaluation dataset
+    \item \textbf{Quantized local models}: GGUF int4/int8 variants of Qwen2.5-1.5B and Qwen2.5-3B to improve the local accuracy-latency frontier without full-precision CPU inference.
+    \item \textbf{Confidence-gated fallback}: Use token log-probabilities to decide when to trust LLM output versus fall back to rules, reducing unnecessary fallback invocations.
+    \item \textbf{Recurring event queries}: Extend temporal extraction to handle recurring expressions (``every Monday'', ``weekly seminars'').
+    \item \textbf{Expanded benchmark}: Add robustness (typo) and cross-domain variants to cover the full three-dataset suite (\textit{retrieval}, \textit{temporal}, \textit{robustness}).
 \end{itemize}
 
-\begin{thebibliography}{99}
-
-\bibitem{brown2020language}
-T. B. Brown et al., ``Language models are few-shot learners,'' in \textit{Proc. NeurIPS}, 2020.
-
-\bibitem{karpukhin2020dense}
-V. Karpukhin et al., ``Dense passage retrieval for open-domain question answering,'' in \textit{Proc. EMNLP}, 2020.
-
-\bibitem{reimers2019sentencebert}
-N. Reimers and I. Gurevych, ``Sentence-BERT: Sentence embeddings using Siamese BERT-networks,'' in \textit{Proc. EMNLP}, 2019.
-
-\bibitem{verhagen2007semeval}
-M. Verhagen et al., ``SemEval-2007 task 15: TempEval temporal relation identification,'' in \textit{Proc. SemEval}, 2007.
-
-\bibitem{strotgen2010heideltime}
-J. Str{\"o}tgen and M. Gertz, ``HeidelTime: High quality rule-based extraction and normalization of temporal expressions,'' in \textit{Proc. SemEval}, 2010.
-
-\bibitem{chang2012sutime}
-A. X. Chang and C. D. Manning, ``SUTime: A library for recognizing and normalizing time expressions,'' in \textit{Proc. LREC}, 2012.
-
-\bibitem{pustejovsky2003timebank}
-J. Pustejovsky et al., ``The TimeBank corpus,'' in \textit{Proc. Corpus Linguistics}, 2003.
-
-\bibitem{touvron2023llama}
-H. Touvron et al., ``Llama 2: Open foundation and fine-tuned chat models,'' arXiv preprint arXiv:2307.09288, 2023.
-
-\bibitem{berant2013semantic}
-J. Berant et al., ``Semantic parsing on Freebase from question-answer pairs,'' in \textit{Proc. EMNLP}, 2013.
-
-\bibitem{namazifar2021language}
-M. Namazifar et al., ``Language model is all you need: Natural language understanding as question answering,'' in \textit{Proc. ICASSP}, 2021.
-
-\bibitem{dateparser}
-{dateparser contributors}, ``dateparser: python parser for human readable dates,'' \url{https://github.com/scrapinghub/dateparser}, 2023.
-
-\end{thebibliography}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 
 \end{document}

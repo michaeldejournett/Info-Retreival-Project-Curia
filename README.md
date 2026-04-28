@@ -80,7 +80,7 @@ python -m pytest tests/ -v
 
 ### Benchmark suite
 
-The benchmark suite (`testing/benchmark/`) measures retrieval quality, latency, and robustness across model providers. It supports three backends (Gemini, Ollama, HuggingFace hosted/local) and five datasets.
+The benchmark suite (`testing/benchmark/`) is intentionally constrained to a fixed strategy: 7 models, 3 datasets, and 2 suites.
 
 **Prerequisites**
 
@@ -88,48 +88,62 @@ The benchmark suite (`testing/benchmark/`) measures retrieval quality, latency, 
 pip install -r api/requirements.txt
 ```
 
-For HuggingFace hosted models, set `HF_TOKEN` in your environment. For local inference, also install `torch` and `transformers`.
+For local HuggingFace inference (default), install:
+
+```bash
+pip install -r testing/benchmark/requirements-hf-local.txt
+```
+
+For hosted HuggingFace API mode, set `HF_TOKEN`.
+
+**Models (fixed set)**
+
+- `gemini:gemma-3-27b-it`
+- `ollama:llama3:latest`
+- `huggingface:Qwen/Qwen2.5-1.5B-Instruct`
+- `huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+- `huggingface:Qwen/Qwen2.5-0.5B-Instruct`
+- `huggingface:google/flan-t5-base`
+- `huggingface:MBZUAI/LaMini-Flan-T5-248M`
 
 **Datasets**
 
 | Dataset | Cases | Focus |
 |---------|-------|-------|
-| `queries_smoke.json` | 5 | Sanity check — fast pass over the full pipeline |
-| `queries_branch_compare_seed.json` | 8 | Seed cases for A/B branch comparisons |
-| `queries_rigorous_retrieval.json` | 96 | Keyword and semantic retrieval |
+| `queries_all_events.json` | 1325 | One query per scraped event title (full-corpus retrieval sweep) |
 | `queries_rigorous_temporal.json` | 72 | Date/time expression handling |
 | `queries_rigorous_robustness.json` | 72 | Typos, partial matches, edge inputs |
 
 **Running benchmarks via npm**
 
 ```bash
-npm run benchmark:smoke          # quick sanity pass (default model set, smoke dataset)
-npm run benchmark:correctness    # correctness gate on smoke dataset
-npm run benchmark:latency        # latency-stability gate on smoke dataset
-npm run benchmark:full           # full rigorous pass (all three datasets)
-npm run benchmark:first-pass     # HuggingFace hosted models, smoke dataset
-npm run benchmark:hf:router-chat # HuggingFace chat-router models
-npm run benchmark:local-lite     # local CPU inference, smoke dataset
-npm run benchmark:run-all        # all model sets, smoke dataset
+npm run benchmark:correctness              # correctness on all-events
+npm run benchmark:correctness:all-events
+npm run benchmark:correctness:robustness
+npm run benchmark:correctness:temporal
+
+npm run benchmark:latency                  # latency-stability on all-events
+npm run benchmark:latency:all-events
+npm run benchmark:latency:robustness
+npm run benchmark:latency:temporal
 ```
 
 **Running benchmarks directly**
 
 ```bash
-# Smoke pass with a specific model
-python -m testing.benchmark.run_benchmark --profile smoke --models gemini:gemma-3-27b-it
+# Correctness suite on full all-events dataset
+python -m testing.benchmark.run_benchmark --suite correctness --dataset-key all-events
 
-# Full rigorous pass with a custom dataset
+# Latency/stability suite on temporal dataset
 python -m testing.benchmark.run_benchmark \
-  --profile full \
-  --dataset testing/benchmark/datasets/queries_rigorous_temporal.json \
-  --models gemini:gemma-3-27b-it
+  --suite latency-stability \
+  --dataset-key rigorous-temporal
 
-# Local HuggingFace model
+# Override to hosted HF API backend
 python -m testing.benchmark.run_benchmark \
-  --profile smoke \
-  --model-set hf-local-lite \
-  --huggingface-backend local
+  --suite correctness \
+  --dataset-key rigorous-robustness \
+  --huggingface-backend api
 ```
 
 **Output**
@@ -144,14 +158,15 @@ reports/<timestamp>/
 ├── gate_results.json     # pass/fail for each gate profile
 ├── gate_results.md
 └── visuals/              # PNG charts (synced to figures/)
-    ├── fig1_jaccard_similarity.png
-    ├── fig2_temporal_accuracy.png
-    ├── fig3_latency_cdf.png
-    ├── fig4_quality_vs_speed.png
-    └── fig5_per_query_heatmap.png
+  ├── fig1_jaccard.png
+  ├── fig2_temporal.png
+  ├── fig3_latency.png
+  ├── fig4_quality_vs_speed.png
+  ├── fig5_per_query_heatmap.png
+  └── fig6_time_vs_quality_bubble.png
 ```
 
-The five canonical figures are also copied to `figures/` at the project root after each run.
+The six canonical figures are also copied to `figures/` at the project root after each run.
 
 ### Generate search metrics and charts
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -13,7 +14,21 @@ CANONICAL_FIGURE_FILES: Tuple[str, ...] = (
     "fig3_latency.png",
     "fig4_quality_vs_speed.png",
     "fig5_per_query_heatmap.png",
+    "fig6_time_vs_quality_bubble.png",
 )
+
+
+_KNOWN_MODEL_PARAM_B: Dict[str, float] = {
+    "gemini:gemma-3-27b-it": 27.0,
+    "gemini:gemma-3-27b": 27.0,
+    "huggingface:qwen/qwen2.5-1.5b-instruct": 1.5,
+    "huggingface:qwen/qwen2.5-0.5b-instruct": 0.5,
+    "huggingface:tinyllama/tinyllama-1.1b-chat-v1.0": 1.1,
+    "huggingface:google/flan-t5-base": 0.25,
+    "huggingface:mbzuai/lamini-flan-t5-248m": 0.248,
+    "huggingface:sentence-transformers/all-minilm-l6-v2": 0.022,
+    "ollama:llama3:latest": 8.0,
+}
 
 
 def _plot_dependency_available():
@@ -29,6 +44,68 @@ def _safe_metric(value: float | None, fallback: float = 0.0) -> float:
     if value is None:
         return fallback
     return float(value)
+
+
+def _safe_positive_float(value: object) -> Optional[float]:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if parsed <= 0:
+        return None
+    return parsed
+
+
+def _estimate_params_billions(summary: ModelRunSummary) -> float:
+    details = summary.details or {}
+
+    # Prefer explicit metadata if the runner/adapters start providing it.
+    for key in (
+        "params_b",
+        "parameters_b",
+        "parameter_count_b",
+        "parameter_count_billions",
+        "model_size_b",
+    ):
+        parsed = _safe_positive_float(details.get(key))
+        if parsed is not None:
+            return parsed
+
+    provider_lower = summary.provider.strip().lower()
+    model_lower = summary.model_name.strip().lower()
+    known_key = f"{provider_lower}:{model_lower}"
+    if known_key in _KNOWN_MODEL_PARAM_B:
+        return _KNOWN_MODEL_PARAM_B[known_key]
+
+    match_billions = re.search(r"(\d+(?:\.\d+)?)\s*b\b", model_lower)
+    if match_billions:
+        return float(match_billions.group(1))
+
+    match_millions = re.search(r"(\d+(?:\.\d+)?)\s*m\b", model_lower)
+    if match_millions:
+        return float(match_millions.group(1)) / 1000.0
+
+    if "llama3" in model_lower:
+        return 8.0
+    if "flan-t5-base" in model_lower or "temporal_tagger" in model_lower:
+        return 0.25
+    if "minilm" in model_lower:
+        return 0.022
+
+    return 1.0
+
+
+def _sqrt_scaled_bubble_sizes(values: Sequence[float], min_size: float = 260.0, max_size: float = 1900.0):
+    import numpy as np  # type: ignore
+
+    arr = np.array(values, dtype=float)
+    safe = np.clip(arr, a_min=1e-6, a_max=None)
+    roots = np.sqrt(safe)
+    lo = float(roots.min())
+    hi = float(roots.max())
+    if hi - lo <= 1e-12:
+        return np.full(shape=roots.shape, fill_value=(min_size + max_size) / 2.0)
+    return min_size + (roots - lo) / (hi - lo) * (max_size - min_size)
 
 
 def _model_key(provider: str, model_name: str) -> str:
@@ -219,6 +296,23 @@ def _temporal_agreement_against_baseline(
     baseline_rows = model_results.get(baseline_key) or []
     baseline_index = _build_baseline_index(baseline_rows)
 
+    # Use dataset ground truth temporal labels for a consistent denominator
+    # across all models. This avoids denominator drift caused by baseline
+    # extraction behavior on individual queries.
+    temporal_case_keys = {
+        _run_key(brow)
+        for brow in baseline_rows
+        if any(
+            (
+                brow.case.expected.date_from,
+                brow.case.expected.date_to,
+                brow.case.expected.time_from,
+                brow.case.expected.time_to,
+            )
+        )
+    }
+    denominator = len(temporal_case_keys)
+
     fractions: Dict[str, Tuple[int, int]] = {}
 
     for summary in summaries:
@@ -226,29 +320,21 @@ def _temporal_agreement_against_baseline(
         rows = model_results.get(key) or []
 
         if key == baseline_key:
-            fractions[key] = (len(rows), len(rows))
+            fractions[key] = (denominator, denominator)
             continue
 
         numerator = 0
-        # Denominator = all baseline queries that have temporal content, regardless of
-        # whether this model extracted anything. Models that never parse get 0/N.
-        denominator = sum(
-            1
-            for brow in baseline_rows
-            if any((brow.invocation.date_from, brow.invocation.date_to))
-            or any((brow.invocation.time_from, brow.invocation.time_to))
-        )
 
         for row in rows:
+            if _run_key(row) not in temporal_case_keys:
+                continue
+
             baseline_row = baseline_index.get(_run_key(row))
             if baseline_row is None:
                 continue
 
             date_base = (baseline_row.invocation.date_from, baseline_row.invocation.date_to)
             time_base = (baseline_row.invocation.time_from, baseline_row.invocation.time_to)
-            if not any(date_base) and not any(time_base):
-                continue
-
             date_pred = (row.invocation.date_from, row.invocation.date_to)
             time_pred = (row.invocation.time_from, row.invocation.time_to)
             date_ok = date_pred == date_base
@@ -333,7 +419,7 @@ def generate_visual_artifacts(
     # Canonical order: best top3_hit_rate first (Gemini → strongest local → weakest).
     # Used consistently across all figures so the reader can track each model by color.
     import numpy as np  # type: ignore
-    summaries_sorted = sorted(summaries, key=lambda s: s.top3_hit_rate, reverse=True)
+    summaries_sorted = sorted(summaries, key=lambda s: _safe_metric(s.top3_hit_rate, fallback=-1.0), reverse=True)
     model_keys = [_model_key(s.provider, s.model_name) for s in summaries_sorted]
     model_labels = {_model_key(s.provider, s.model_name): _display_label(s) for s in summaries_sorted}
 
@@ -544,5 +630,63 @@ def generate_visual_artifacts(
     cbar.set_ticks([0.0, 0.25, 0.5, 0.75, 1.0])
     cbar.ax.tick_params(labelsize=9)
     _sync_visual(plt, output_dir / "fig5_per_query_heatmap.png", artifacts)
+
+    # fig6_time_vs_quality_bubble.png — p50 latency vs top-3 quality, with
+    # bubble area scaled by sqrt(parameter count) to keep large models visible
+    # without overwhelming smaller ones.
+    fig6_summaries = [s for s in summaries_sorted if s.top3_hit_rate is not None]
+    if not fig6_summaries:
+        raise ValueError("No models with top3_hit_rate were available for fig6_time_vs_quality_bubble.png generation")
+
+    fig6_keys = [_model_key(s.provider, s.model_name) for s in fig6_summaries]
+    fig6_latency_s = [max(s.latency_p50_ms / 1000.0, 0.001) for s in fig6_summaries]
+    fig6_top3 = [float(s.top3_hit_rate) for s in fig6_summaries]
+    fig6_params_b = [_estimate_params_billions(s) for s in fig6_summaries]
+    fig6_sizes = _sqrt_scaled_bubble_sizes(fig6_params_b)
+    fig6_colors = [color_map.get(key, "#7f8c8d") for key in fig6_keys]
+    fig6_labels = [model_labels.get(key, key).split("\n", 1)[0] for key in fig6_keys]
+
+    fig, ax = plt.subplots(figsize=(max(9, int(1.4 * len(fig6_keys))), 6))
+    ax.scatter(
+        fig6_latency_s,
+        fig6_top3,
+        s=fig6_sizes,
+        c=fig6_colors,
+        alpha=0.76,
+        edgecolors="black",
+        linewidth=1.2,
+        zorder=3,
+    )
+
+    for latency_s, top3, label, params_b in zip(fig6_latency_s, fig6_top3, fig6_labels, fig6_params_b):
+        ax.annotate(
+            f"{label}\n{params_b:.2g}B",
+            xy=(latency_s, top3),
+            xytext=(6, 6),
+            textcoords="offset points",
+            fontsize=8,
+            fontweight="bold",
+            alpha=0.95,
+        )
+
+    ax.set_xscale("log")
+    x_min = min(fig6_latency_s)
+    x_max = max(fig6_latency_s)
+    ax.set_xlim([max(0.01, x_min * 0.75), max(1.0, x_max * 1.8)])
+    ax.set_ylim([0.0, 1.05])
+    ax.set_xlabel("Latency p50 (seconds, log scale)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Top-3 Hit Rate", fontsize=11, fontweight="bold")
+    ax.set_title("Top-3 Quality vs Time", fontsize=12, fontweight="bold", pad=15)
+    ax.grid(True, alpha=0.3, zorder=1)
+
+    ref_params = sorted({min(fig6_params_b), float(np.median(fig6_params_b)), max(fig6_params_b)})
+    ref_sizes = _sqrt_scaled_bubble_sizes(ref_params)
+    ref_handles = [
+        ax.scatter([], [], s=size, c="#ffffff", edgecolors="black", linewidth=1.2, alpha=0.7, label=f"{val:.2g}B")
+        for val, size in zip(ref_params, ref_sizes)
+    ]
+    ax.legend(handles=ref_handles, title="Approx params", loc="lower right", fontsize=8, title_fontsize=9)
+
+    _sync_visual(plt, output_dir / "fig6_time_vs_quality_bubble.png", artifacts)
 
     return {"artifacts": artifacts, "warning": ""}

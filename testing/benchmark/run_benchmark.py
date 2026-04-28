@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import threading
 import time
@@ -11,10 +10,8 @@ from typing import Any, Dict, List, Tuple
 
 from testing.benchmark.adapters.base import AdapterConfig, build_adapter
 from testing.benchmark.dataset import (
-    generate_template_cases,
     load_dataset,
     validate_cases,
-    write_template_dataset,
 )
 from testing.benchmark.evaluator import summarize_model
 from testing.benchmark.gates import compute_stability_metrics, evaluate_summary, resolve_gate_profile
@@ -35,7 +32,12 @@ from testing.benchmark.schemas import ModelInvocationResult, QueryRunResult
 from testing.benchmark.visuals import generate_visual_artifacts, sync_canonical_figures
 
 
-DEFAULT_SMOKE_DATASET = "testing/benchmark/datasets/queries_smoke.json"
+DATASET_PRESETS: Dict[str, str] = {
+    "all-events": "testing/benchmark/datasets/queries_all_events.json",
+    "rigorous-robustness": "testing/benchmark/datasets/queries_rigorous_robustness.json",
+    "rigorous-temporal": "testing/benchmark/datasets/queries_rigorous_temporal.json",
+}
+DEFAULT_DATASET_KEY = "all-events"
 DEFAULT_REPORTS_DIR = "testing/benchmark/reports"
 DEFAULT_EVENTS_PATH = "scraped/events.json"
 DEFAULT_FIGURES_DIR = "figures"
@@ -62,54 +64,22 @@ def _resolve_model_specs(args: argparse.Namespace) -> str:
 
 
 def _load_cases(args: argparse.Namespace):
-    if args.dataset:
-        return load_dataset(args.dataset)
-
-    if args.profile == "smoke":
-        return load_dataset(DEFAULT_SMOKE_DATASET)
-
-    cases = generate_template_cases(size=args.full_size)
-    metadata = {
-        "name": "generated-template",
-        "version": "generated",
-        "label_status": "pending-manual",
-    }
-    return cases, metadata
+    dataset_path = DATASET_PRESETS[args.dataset_key]
+    return load_dataset(dataset_path)
 
 
 def _apply_suite_defaults(args: argparse.Namespace) -> None:
-    suite = (args.suite or "default").strip().lower()
-    if suite == "correctness":
-        args.enforce_label_quality = True
-        if not args.gate_profile:
-            args.gate_profile = "correctness"
-        return
-
-    if suite == "latency-stability":
-        args.enforce_label_quality = True
-        if args.runs_per_query == 1:
-            args.runs_per_query = 3
-        if not args.gate_profile:
-            args.gate_profile = "latency-stability"
-        return
-
-    if not args.gate_profile:
-        args.gate_profile = "none"
-
-
-def _ensure_template_written(args: argparse.Namespace) -> None:
-    if not args.write_template:
-        return
-    output = write_template_dataset(args.write_template, size=args.full_size)
-    print(f"Template dataset written to: {output}")
+    suite = args.suite.strip().lower()
+    if suite == "latency-stability" and args.runs_per_query == 1:
+        args.runs_per_query = 3
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Curia cross-model extraction benchmark")
     parser.add_argument(
         "--suite",
-        choices=["default", "correctness", "latency-stability"],
-        default="default",
+        choices=["correctness", "latency-stability"],
+        default="correctness",
         help="Suite mode with preset validation and gate behavior",
     )
     parser.add_argument(
@@ -124,32 +94,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated provider:model list (overrides --model-set)",
     )
     parser.add_argument(
-        "--profile",
-        choices=["smoke", "full"],
-        default="smoke",
-        help="Use smoke dataset or generated full template",
-    )
-    parser.add_argument("--dataset", default="", help="Path to benchmark dataset JSON")
-    parser.add_argument(
-        "--dataset-version",
-        default="",
-        help="Optional dataset version override to include in run metadata",
-    )
-    parser.add_argument(
-        "--enforce-label-quality",
-        action="store_true",
-        help="Fail fast when dataset labels are incomplete or malformed",
-    )
-    parser.add_argument(
-        "--expected-label-status",
-        default="",
-        help="Require dataset metadata.label_status to match this exact value",
-    )
-    parser.add_argument(
-        "--gate-profile",
-        choices=["none", "correctness", "latency-stability", "all"],
-        default="",
-        help="Evaluation gate profile for pass/fail reporting",
+        "--dataset-key",
+        choices=sorted(DATASET_PRESETS.keys()),
+        default=DEFAULT_DATASET_KEY,
+        help="Named benchmark dataset to run",
     )
     parser.add_argument(
         "--skip-visuals",
@@ -180,12 +128,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional local dtype override for Hugging Face local backend (auto/float16/bfloat16/float32/none)",
     )
-    parser.add_argument("--full-size", type=int, default=100, help="Generated template size for full profile")
-    parser.add_argument(
-        "--write-template",
-        default="",
-        help="Optional path to write a generated dataset template and continue",
-    )
     parser.add_argument(
         "--max-parallel-models",
         type=int,
@@ -209,10 +151,12 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     _apply_suite_defaults(args)
-    gate_profile = resolve_gate_profile(args.gate_profile)
+    gate_profile = resolve_gate_profile(args.suite)
 
     if args.huggingface_backend:
         os.environ["HUGGINGFACE_BACKEND"] = args.huggingface_backend
+    elif not (os.environ.get("HUGGINGFACE_BACKEND") or "").strip():
+        os.environ["HUGGINGFACE_BACKEND"] = "local"
     if args.huggingface_local_device:
         os.environ["HUGGINGFACE_LOCAL_DEVICE"] = args.huggingface_local_device
     if args.huggingface_local_dtype:
@@ -220,14 +164,13 @@ def main() -> int:
 
     resolved_models = _resolve_model_specs(args)
     model_configs = _parse_models(resolved_models)
-    _ensure_template_written(args)
 
     cases, dataset_metadata = _load_cases(args)
     validation_meta = validate_cases(
         cases,
-        strict_labels=args.enforce_label_quality,
+        strict_labels=True,
         metadata=dataset_metadata,
-        expected_label_status=args.expected_label_status,
+        expected_label_status="",
     )
 
     events = load_event_corpus(args.events)
@@ -329,7 +272,8 @@ def main() -> int:
         summaries.append(summary)
         gate_results.append(gate_result)
 
-    dataset_version = args.dataset_version or str(dataset_metadata.get("version") or "")
+    dataset_path = DATASET_PRESETS[args.dataset_key]
+    dataset_version = str(dataset_metadata.get("version") or "")
     gate_passed = sum(1 for g in gate_results if g.get("passed"))
 
     # Write data files first so results are preserved even if visual generation fails.
@@ -352,10 +296,10 @@ def main() -> int:
 
     run_meta = {
         "suite": args.suite,
-        "profile": args.profile,
-        "gate_profile": args.gate_profile,
+        "gate_profile": args.suite,
         "model_set": args.model_set,
-        "dataset": args.dataset or (DEFAULT_SMOKE_DATASET if args.profile == "smoke" else "generated-template"),
+        "dataset_key": args.dataset_key,
+        "dataset": dataset_path,
         "dataset_version": dataset_version,
         "dataset_label_status": str(dataset_metadata.get("label_status") or ""),
         "events": args.events,
@@ -366,11 +310,11 @@ def main() -> int:
         "timeout_s": args.timeout_s,
         "temperature": args.temperature,
         "max_tokens": args.max_tokens,
-        "huggingface_backend": os.environ.get("HUGGINGFACE_BACKEND", "api"),
+        "huggingface_backend": os.environ.get("HUGGINGFACE_BACKEND", "local"),
         "huggingface_local_device": os.environ.get("HUGGINGFACE_LOCAL_DEVICE", "auto"),
         "huggingface_local_dtype": os.environ.get("HUGGINGFACE_LOCAL_DTYPE", "auto"),
-        "enforce_label_quality": args.enforce_label_quality,
-        "expected_label_status": args.expected_label_status,
+        "enforce_label_quality": True,
+        "expected_label_status": "",
         "dataset_validation": validation_meta,
         "gate_passed_models": gate_passed,
         "gate_total_models": len(gate_results),
@@ -388,38 +332,9 @@ def main() -> int:
     if synced_figures or figures_sync_warning:
         append_figures_sync_to_summary(summary_md, synced_figures, figures_sync_warning)
 
-    gate_json = write_gate_results_json(run_dir, args.gate_profile, gate_results)
-    gate_md = write_gate_results_markdown(run_dir, args.gate_profile, gate_results)
+    gate_json = write_gate_results_json(run_dir, args.suite, gate_results)
+    gate_md = write_gate_results_markdown(run_dir, args.suite, gate_results)
     summary_json = write_summary_json(run_dir, summaries, run_meta)
-
-    # Save generated template when running full profile without dataset, for manual labeling.
-    if args.profile == "full" and not args.dataset:
-        template_path = run_dir / "generated_full_template.json"
-        template_payload = {
-            "metadata": {
-                "source": "generated-by-runner",
-                "label_status": "pending-manual",
-                "size": len(cases),
-            },
-            "cases": [
-                {
-                    "id": c.case_id,
-                    "query": c.query,
-                    "tags": c.tags,
-                    "expected": {
-                        "keywords": c.expected.keywords,
-                        "date_from": c.expected.date_from,
-                        "date_to": c.expected.date_to,
-                        "time_from": c.expected.time_from,
-                        "time_to": c.expected.time_to,
-                        "relevant_event_urls": c.expected.relevant_event_urls,
-                    },
-                    "notes": c.notes,
-                }
-                for c in cases
-            ],
-        }
-        template_path.write_text(json.dumps(template_payload, indent=2), encoding="utf-8")
 
     print("Run complete.")
     print(f"Summary JSON: {summary_json}")
