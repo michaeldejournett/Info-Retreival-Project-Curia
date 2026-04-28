@@ -1,0 +1,88 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{dateparser}
+\citation{verhagen2007semeval}
+\citation{verhagen2007semeval}
+\citation{strotgen2010heideltime}
+\citation{chang2012sutime}
+\citation{pustejovsky2003timebank}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{1}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{1}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Temporal Information Extraction}{1}{subsection.2.1}\protected@file@percent }
+\citation{brown2020language}
+\citation{touvron2023llama}
+\citation{berant2013semantic}
+\citation{karpukhin2020dense}
+\citation{reimers2019sentencebert}
+\citation{namazifar2021language}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Few-Shot and In-Context Learning}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Query Understanding and Structured Extraction}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Dense Retrieval and Hybrid Search}{2}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Hybrid Rule and Learning-Based Systems}{2}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Methodology}{2}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{III}{2}{Methodology}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}System Overview}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Curia system architecture. The Express backend forwards search queries to the FastAPI service, which runs the active LLM path and returns structured JSON. Events are scored and ranked in the backend.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{2}{Curia system architecture. The Express backend forwards search queries to the FastAPI service, which runs the active LLM path and returns structured JSON. Events are scored and ranked in the backend}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Task Definition}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Gemini Remote Path}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Local Two-Stage Path}{3}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:local}{{\mbox  {III-D}}{3}{Local Two-Stage Path}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0a}Stage 1 — Temporal Extraction}{3}{paragraph.3.4.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0b}Stage 2 — Keyword Expansion}{3}{paragraph.3.4.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0c}Fallback Chain}{3}{paragraph.3.4.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}MiniLM Hybrid Retrieval}{3}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:minilm}{{\mbox  {III-E}}{3}{MiniLM Hybrid Retrieval}{subsection.3.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Event Scoring}{3}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Models Evaluated}{3}{subsection.3.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Model Candidates}}{3}{table.1}\protected@file@percent }
+\newlabel{table:models}{{I}{3}{Model Candidates}{table.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experiments}{3}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{IV}{3}{Experiments}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Benchmark Dataset}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Metrics}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Query Grounding Accuracy on 72 Rigorous Temporal Queries}}{4}{table.2}\protected@file@percent }
+\newlabel{table:accuracy_results}{{II}{4}{Query Grounding Accuracy on 72 Rigorous Temporal Queries}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Main Results}{4}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Computational Efficiency}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces CPU Inference Latency (72 Queries, 4-Core)}}{4}{table.3}\protected@file@percent }
+\newlabel{table:efficiency}{{III}{4}{CPU Inference Latency (72 Queries, 4-Core)}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Benchmark Visualizations}{4}{subsection.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Keyword Jaccard similarity between each model's predictions and the Gemini baseline.}}{4}{figure.2}\protected@file@percent }
+\newlabel{fig:jaccard}{{2}{4}{Keyword Jaccard similarity between each model's predictions and the Gemini baseline}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Temporal accuracy: date exact-match and time exact-match rates per model.}}{4}{figure.3}\protected@file@percent }
+\newlabel{fig:temporal}{{3}{4}{Temporal accuracy: date exact-match and time exact-match rates per model}{figure.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Latency CDF across all 72 benchmark queries for each model.}}{4}{figure.4}\protected@file@percent }
+\newlabel{fig:latency}{{4}{4}{Latency CDF across all 72 benchmark queries for each model}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Quality (MRR) vs.\ speed (mean latency) across models. Gemini occupies the quality frontier; local models trade speed for accuracy.}}{5}{figure.5}\protected@file@percent }
+\newlabel{fig:quality_vs_speed}{{5}{5}{Quality (MRR) vs.\ speed (mean latency) across models. Gemini occupies the quality frontier; local models trade speed for accuracy}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Per-query score heatmap showing model accuracy across the 72 benchmark cases. Rows are queries; columns are models.}}{5}{figure.6}\protected@file@percent }
+\newlabel{fig:heatmap}{{6}{5}{Per-query score heatmap showing model accuracy across the 72 benchmark cases. Rows are queries; columns are models}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Ablation: Model Scale and Capability Ceiling}{5}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:ablation}{{\mbox  {IV-F}}{5}{Ablation: Model Scale and Capability Ceiling}{subsection.4.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Scale Ablation: 8-Query Exploratory Evaluation}}{5}{table.4}\protected@file@percent }
+\newlabel{table:scale}{{IV}{5}{Scale Ablation: 8-Query Exploratory Evaluation}{table.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Abandoned Candidates}{5}{subsection.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-G}0a}TIMEX3 Sequence Labeler (\texttt  {temporal\_tagger\_roberta2roberta})}{5}{paragraph.4.7.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-G}0b}Zero-Shot Seq2Seq (\texttt  {flan-t5-base})}{5}{paragraph.4.7.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-H}}Error Analysis}{5}{subsection.4.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Conclusion}{5}{section.5}\protected@file@percent }
+\newlabel{sec:conclusion}{{V}{5}{Conclusion}{section.5}{}}
+\bibcite{brown2020language}{1}
+\bibcite{karpukhin2020dense}{2}
+\bibcite{reimers2019sentencebert}{3}
+\bibcite{verhagen2007semeval}{4}
+\bibcite{strotgen2010heideltime}{5}
+\bibcite{chang2012sutime}{6}
+\bibcite{pustejovsky2003timebank}{7}
+\bibcite{touvron2023llama}{8}
+\bibcite{berant2013semantic}{9}
+\bibcite{namazifar2021language}{10}
+\bibcite{dateparser}{11}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Future Work}{6}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{6}{section*.1}\protected@file@percent }
+\gdef \@abspage@last{6}
