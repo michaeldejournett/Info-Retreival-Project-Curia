@@ -59,7 +59,11 @@
 \maketitle
 
 \begin{abstract}
-This paper frames Curia as an efficiency study centered on model-size minimization for event query understanding. We investigate how far the model can be reduced while preserving two core capabilities: keyword extraction and temporal grounding. Using a two-path inference pipeline—a large remote baseline (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) and a local in-context learning path (\texttt{Qwen2.5-0.5B-Instruct})—we evaluate six model candidates ranging from 248M to 27B parameters on a rigorous benchmark of 72 temporal queries derived from real UNL event data. The 27B Gemini path achieves 100\% parse success, 100\% temporal exact-match accuracy, and a Mean Reciprocal Rank (MRR) of 0.650. The local 500M Qwen2.5-0.5B path achieves 23.6\% parse success and 19.4\% date exact-match at 6.9\,s CPU latency, while all other sub-1B candidates fail to produce structured output. Results reveal asymmetric degradation: keyword retention holds longer than temporal extraction as capacity decreases, and a structured output ceiling appears below 1B parameters on consumer CPU. A lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword output for both paths at under 50\,ms, offering a practical way to extend semantic coverage without increasing the primary model size.
+Curia is a campus event search system for University of Nebraska--Lincoln that parses natural-language queries into keywords and structured temporal bounds. This paper studies how far the underlying language model can be reduced while preserving keyword expansion and temporal grounding under tight CPU latency and memory budgets.
+
+We compare a remote reference model (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) against five local candidates (248M--1.5B) on a rigorous benchmark of 72 labeled temporal queries derived from real UNL event data. Gemma achieves 100\% JSON parse success and 100\% temporal exact-match accuracy, with a Mean Reciprocal Rank (MRR) of 0.650.
+
+Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range on consumer CPU. Finally, a lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword lists for all model paths in under 50\,ms, improving semantic coverage without increasing the primary model size.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -69,21 +73,23 @@ This paper frames Curia as an efficiency study centered on model-size minimizati
 \section{Introduction}
 \label{sec:intro}
 
-Event search systems depend on two query-understanding capabilities: extracting intent-bearing keywords and grounding temporal expressions into structured date and time constraints. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic, a relative date anchor, and a time lower bound. Converting this free-form input into structured filters drives retrieval quality.
+Event search systems depend on two query-understanding capabilities: extracting and expanding intent-bearing keywords for retrieval, and grounding temporal expressions into structured date and time bounds. A user typing ``free food next Thursday after 3pm'' has simultaneously specified a topic, a relative date anchor, and a time lower bound. Converting this free-form input into structured filters drives retrieval quality.
 
-In practice, these systems must often operate under tight memory and latency budgets. This raises a central design tension: how far can the underlying model be reduced before extraction capability degrades enough to harm retrieval? Prior work on neural scaling laws~\cite{kaplan2020scaling,hoffmann2022training} suggests that capabilities do not decline uniformly across tasks as capacity decreases, but the exact pattern depends on task difficulty and output structure requirements.
+In practice, interactive search must operate under tight memory and latency budgets, which pushes deployment toward smaller models. This raises a central design tension: how far can the underlying model be reduced before these extraction behaviors degrade enough to harm retrieval? Prior work on neural scaling laws~\cite{kaplan2020scaling,hoffmann2022training} suggests that capabilities can decline unevenly as capacity decreases, and the effect is often amplified when the task requires reliable structured output.
 
-This paper studies that tension directly in Curia, a campus event search system for UNL. Rather than targeting architectural novelty, we evaluate whether model-size reduction can preserve the behaviors needed for downstream retrieval. We focus on two research questions:
+This paper studies that tension directly in Curia, a campus event search system for UNL. Rather than targeting architectural novelty, we measure how model capacity affects the two core tasks that drive retrieval: keyword expansion and temporal grounding. We focus on four research questions:
 \begin{enumerate}
-    \item Can model size be substantially reduced while retaining keyword extraction performance?
-    \item Can model size be reduced while retaining temporal extraction performance?
+    \item Does the gap between the two tasks, temporal grounding and keyword expansion, begin to diverge as model size decreases?
+    \item At what point can our structured prompt no longer produce usable results?
+    \item How stable are these results, and does the stability substantively change as model size decreases?
+    \item What model size offers the best tradeoff among stability, accuracy, and latency?
 \end{enumerate}
 
-Our experiments show asymmetric degradation. Keyword extraction remains partially functional at 500M parameters, while temporal structured output collapses entirely below that scale. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
+Our experiments show asymmetric degradation. Keyword expansion remains partially functional at 500M parameters, while temporal structured output collapses entirely below that scale. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
 
 This paper makes three contributions:
 \begin{itemize}
-    \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword extraction and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
+    \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword expansion and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
     \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and a taxonomy of four distinct failure modes across all six model candidates.
     \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities, including the case for a small hybrid retrieval module as a lightweight substitute for LLM-based keyword expansion.
 \end{itemize}
@@ -116,7 +122,7 @@ Combining neural models with rule-based fallbacks improves robustness on out-of-
 
 \subsection{Divergence-Centered Study Design}
 
-Our design measures how capability diverges across the two extraction tasks as model size decreases. We evaluate with two coupled objectives: preserve keyword extraction as far as possible, and measure precisely where temporal extraction degrades. No quantization, pruning, or distillation is applied; model family scale is the sole experimental variable. This isolates capacity as the primary factor and avoids confounding from additional compression techniques.
+Our design measures how capability diverges across the two extraction tasks as model size decreases. We evaluate with two coupled objectives: preserve keyword expansion as far as possible, and measure precisely where temporal extraction degrades. No quantization, pruning, or distillation is applied; model family scale is the sole experimental variable. This isolates capacity as the primary factor and avoids confounding from additional compression techniques.
 
 \subsection{Task Outputs}
 
@@ -151,7 +157,7 @@ Performance divergence is then:
 D_{\mathrm{perf}}(s)=\hat{F1}_{\mathrm{kw}}(s)-\hat{EM}_{\mathrm{temp}}(s).
 \]
 
-Positive $D_{\mathrm{perf}}(s)$ means keyword extraction is retained better than temporal extraction at size $s$.
+Positive $D_{\mathrm{perf}}(s)$ means keyword expansion is retained better than temporal extraction at size $s$.
 
 \subsection{Inference Paths}
 
@@ -251,7 +257,7 @@ The Gemini path dominates all accuracy metrics. Among the five local candidates,
 
 \subsection{Divergence Analysis}
 
-Using $D_{\mathrm{perf}}(s) = \hat{F1}_{\mathrm{kw}}(s) - \hat{EM}_{\mathrm{temp}}(s)$ with the 27B Gemini model as $s_{\max}$, we observe positive divergence at all sub-27B scales: keyword F1 retains 71\% of baseline at 500M parameters ($\hat{F1}_{\mathrm{kw}} = 0.71$) while temporal exact-match retains 0\% at the same scale ($\hat{EM}_{\mathrm{temp}} = 0.0$), giving $D_{\mathrm{perf}} = 0.71$. This confirms the asymmetric degradation hypothesis: temporal extraction is more sensitive to capacity reduction than keyword extraction under the same in-context learning protocol.
+Using $D_{\mathrm{perf}}(s) = \hat{F1}_{\mathrm{kw}}(s) - \hat{EM}_{\mathrm{temp}}(s)$ with the 27B Gemini model as $s_{\max}$, we observe positive divergence at all sub-27B scales: keyword F1 retains 71\% of baseline at 500M parameters ($\hat{F1}_{\mathrm{kw}} = 0.71$) while temporal exact-match retains 0\% at the same scale ($\hat{EM}_{\mathrm{temp}} = 0.0$), giving $D_{\mathrm{perf}} = 0.71$. This confirms the asymmetric degradation hypothesis: temporal extraction is more sensitive to capacity reduction than keyword expansion under the same in-context learning protocol.
 
 \subsection{Computational Efficiency}
 
@@ -380,11 +386,11 @@ These are semantic reasoning failures that occur even when the model generates v
 \section{Conclusion}
 \label{sec:conclusion}
 
-We present Curia-Lite, an efficiency study on model-size minimization for event query grounding. Our results confirm asymmetric degradation: under a consistent in-context learning protocol and fallback policy, keyword extraction retains partial function at 500M parameters while temporal structured output is essentially zero below the 27B scale on consumer CPU. A sub-1B structured-output ceiling is real and does not appear bridgeable by prompt engineering alone without quantization or GPU inference.
+We present Curia-Lite, an efficiency study on model-size minimization for event query grounding. Our results confirm asymmetric degradation: under a consistent in-context learning protocol and fallback policy, keyword expansion retains partial function at 500M parameters while temporal structured output is essentially zero below the 27B scale on consumer CPU. A sub-1B structured-output ceiling is real and does not appear bridgeable by prompt engineering alone without quantization or GPU inference.
 
 Key findings:
 \begin{itemize}
-    \item \textbf{Keyword extraction is more size-resilient}: At 500M parameters, keyword F1 retains 71\% of the 27B baseline. Temporal extraction retains 0\%.
+    \item \textbf{Keyword expansion is more size-resilient}: At 500M parameters, keyword F1 retains 71\% of the 27B baseline. Temporal extraction retains 0\%.
     \item \textbf{A structured-output ceiling exists below 1B parameters on CPU}: No model smaller than 27B produces consistent parseable JSON with correct temporal arithmetic across the 72-query benchmark.
     \item \textbf{The 1.5B$\to$0.5B step is discontinuous for temporal reasoning}: The 1.5B model partially solves problems the 0.5B cannot, but at $14\times$ the latency, making it impractical without hardware acceleration.
     \item \textbf{Hybrid retrieval is an efficient supplement}: MiniLM at 22M parameters and $<$50\,ms augments keyword output for all model sizes with negligible overhead.
