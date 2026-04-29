@@ -1,11 +1,12 @@
 """Plot precision/recall comparison charts for raw vs expanded searches.
 
 Reads metrics/search_metrics.json (core) and metrics/search_metrics_extended.json
-(P@K, PR curves, score distributions) and writes one PNG per chart to metrics/.
+(P@K, PR curves, score distributions) and writes one PNG per chart to figures/temporal/correctness/.
 """
 import json
 import os
 import sys
+from pathlib import Path
 
 try:
     import matplotlib.pyplot as plt
@@ -14,6 +15,10 @@ try:
 except Exception:
     print("matplotlib and numpy are required. Install with: pip install matplotlib numpy", file=sys.stderr)
     raise
+
+# Output directory for all charts
+OUT_DIR = Path("figures") / "temporal" / "correctness"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +43,9 @@ def load_extended(path="metrics/search_metrics_extended.json"):
 # Chart 1 (original): Precision@50 and Recall@50 side by side
 # ---------------------------------------------------------------------------
 
-def plot_precision_recall(metrics, out_path="metrics/chart_precision_recall.png"):
+def plot_precision_recall(metrics, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_precision_recall.png"
     cats = [m["category"] for m in metrics]
     raw_prec = [m["raw_precision"] for m in metrics]
     exp_prec = [m["exp_precision"] for m in metrics]
@@ -91,7 +98,9 @@ def f1(p, r):
     return 2 * p * r / (p + r) if (p + r) > 0 else 0.0
 
 
-def plot_f1(metrics, out_path="metrics/chart_f1.png"):
+def plot_f1(metrics, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_f1.png"
     cats     = [m["category"] for m in metrics]
     raw_f1   = [f1(m["raw_precision"], m["raw_recall"]) for m in metrics]
     exp_f1   = [f1(m["exp_precision"], m["exp_recall"]) for m in metrics]
@@ -123,7 +132,9 @@ def plot_f1(metrics, out_path="metrics/chart_f1.png"):
 # Chart 3: Precision@K grouped bar (K = 1, 3, 5, 10) — averaged across cats
 # ---------------------------------------------------------------------------
 
-def plot_pak(extended, out_path="metrics/chart_pak.png"):
+def plot_pak(extended, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_pak.png"
     ks = [1, 3, 5, 10]
     # average P@K across categories that have ground truth
     raw_means, exp_means = [], []
@@ -168,7 +179,9 @@ def _interpolate_pr(pr_points):
     return recalls, precisions
 
 
-def plot_pr_curve(extended, out_path="metrics/chart_pr_curve.png"):
+def plot_pr_curve(extended, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_pr_curve.png"
     # Build average PR curve by binning recall into 11 standard points [0..1]
     recall_levels = np.linspace(0, 1, 11)
 
@@ -216,7 +229,9 @@ def plot_pr_curve(extended, out_path="metrics/chart_pr_curve.png"):
 # Chart 5: Score distribution histogram (aggregate across all categories)
 # ---------------------------------------------------------------------------
 
-def plot_score_distribution(extended, out_path="metrics/chart_score_dist.png"):
+def plot_score_distribution(extended, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_score_dist.png"
     all_raw = []
     all_exp = []
     for m in extended:
@@ -255,7 +270,9 @@ def plot_score_distribution(extended, out_path="metrics/chart_score_dist.png"):
 # Chart 6: Ground-truth coverage per category
 # ---------------------------------------------------------------------------
 
-def plot_gt_coverage(metrics, out_path="metrics/chart_gt_coverage.png"):
+def plot_gt_coverage(metrics, out_path=None):
+    if out_path is None:
+        out_path = OUT_DIR / "chart_gt_coverage.png"
     cats = [m["category"] for m in metrics]
     gt_counts = [m["gt_count"] for m in metrics]
 
