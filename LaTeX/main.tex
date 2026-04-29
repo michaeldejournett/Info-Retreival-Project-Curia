@@ -97,25 +97,23 @@ This paper makes three contributions:
 \section{Related Work}
 \label{sec:related}
 
-\subsection{Temporal Information Extraction}
-
-Traditional temporal extraction systems use hand-crafted rule sets and lexicons, exemplified by the TIMEX3 annotation scheme~\cite{verhagen2007semeval} and systems such as HeidelTime~\cite{strotgen2010heideltime}. These are interpretable but fragile on linguistic variation. Neural approaches fine-tuned on TimeBank~\cite{pustejovsky2003timebank} improve recall on news documents but inherit a document-centric assumption: temporal expressions are anchored to an article's publication date, not to the user's present moment. This domain gap makes TIMEX3 taggers unsuitable for query-side resolution against a live reference date.
+Our work sits at the intersection of neural scaling, temporal information extraction, in-context learning, and small-model deployment. We review the most relevant prior work in each area below.
 
 \subsection{Neural Scaling Laws}
 
-Scaling law research~\cite{kaplan2020scaling,hoffmann2022training} shows that model performance on many tasks grows predictably with parameter count, but emergent capabilities can appear or disappear sharply at specific thresholds. Structured output generation—producing well-formed JSON with correct field values—is particularly sensitive to capacity, since it requires simultaneous control of format, arithmetic reasoning, and factual grounding.
+Kaplan et al.~\cite{kaplan2020scaling} showed that language model loss scales as a power law with model size, dataset size, and compute across seven orders of magnitude. Hoffmann et al.~\cite{hoffmann2022training} refined this, finding that many widely-used models are undertrained relative to their parameter count and that tokens and parameters should be scaled together. Both results bear directly on our study: if performance degrades predictably with size, we should be able to identify a parameter range where structured extraction breaks down---and our experiments show that range is sharper than a smooth power law would suggest.
+
+\subsection{Temporal Extraction and Hybrid Retrieval}
+
+HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use \texttt{all-MiniLM-L6-v2}, a compact Sentence-BERT model, to retrieve semantically related domain terms and append them to the LLM's keyword output at under 50\,ms per query.
 
 \subsection{Few-Shot and In-Context Learning}
 
-In-context learning (ICL)~\cite{brown2020language} allows language models to perform new tasks from a handful of demonstrations in the prompt, without any gradient updates. Chat-template prompting—where examples are formatted as \texttt{user}/\texttt{assistant} turns~\cite{touvron2023llama}—improves instruction-following in decoder-only models. We use this approach with \texttt{Qwen2.5-0.5B-Instruct}, providing 4 exemplars for temporal extraction and 3 for keyword expansion, with no weight updates.
+Brown et al.~\cite{brown2020language} showed that large language models can follow new task specifications from a handful of in-context examples alone, no weight updates needed, and that this ability improves with scale. We rely on this throughout: \texttt{Qwen2.5-0.5B-Instruct} receives 4 temporal exemplars and 3 keyword exemplars per query. Our results put a finer point on the scale dependency. At 500M parameters, this approach yields only 23.6\% parse success. The 1.1B and 1.5B models fail entirely, though not because they are too small: TinyLlama's chat template is incompatible with our prompt format, and the 1.5B Qwen model exhausts the 512-token budget on reasoning traces before completing the JSON body.
 
-\subsection{Hybrid Dense Retrieval for Keyword Expansion}
+\subsection{Small and Specialized Language Models}
 
-Dense retrieval models~\cite{karpukhin2020dense} and sentence embedding models~\cite{reimers2019sentencebert} enable semantic matching beyond keyword overlap. For keyword expansion specifically, nearest-neighbor lookup over a domain vocabulary is a lightweight technique to supplement LLM output without a full retrieval-augmented generation pipeline. Our MiniLM hybrid module follows this pattern and adds negligible latency.
-
-\subsection{Hybrid Rule and Learning-Based Systems}
-
-Combining neural models with rule-based fallbacks improves robustness on out-of-distribution inputs. For temporal grounding in particular, deterministic libraries such as \texttt{dateparser}~\cite{dateparser} provide reliable coverage of explicit date strings and common relative expressions that small neural models handle poorly. Applying the same fallback policy across all model sizes allows us to compare degradation under a stable hybrid configuration.
+Several groups have looked at whether small models are viable substitutes for large ones in narrow domains. Grangier et al.~\cite{grangier2024small} propose resampling pretraining data toward a target domain using importance sampling, alongside a projected-network architecture that compresses a large model into a smaller one at inference time. Belcak et al.~\cite{belcak2025slm} make the broader argument that SLMs are a natural fit for the repetitive, single-purpose subtasks that show up in production agentic pipelines. Fan et al.~\cite{fan2025smallmighty} report that sub-3B models can compete on time-series forecasting when given descriptive statistical prompts and an adaptive fusion layer. These papers make a reasonable case that small models are worth taking seriously for specialized tasks. We test that idea on structured temporal grounding and find the gap to the 27B reference model is not closeable in the sub-2B range under our evaluation conditions.
 
 \section{Methodology}
 \label{sec:method}
