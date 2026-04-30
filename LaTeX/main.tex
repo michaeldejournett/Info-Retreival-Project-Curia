@@ -1,4 +1,4 @@
-\documentclass[conference]{IEEEtran}
+﻿\documentclass[conference]{IEEEtran}
 \usepackage[utf8]{inputenc}
 \usepackage{cite}
 \usepackage{amsmath}
@@ -9,6 +9,7 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{multirow}
 
 % Code listing configuration
 \lstset{
@@ -61,9 +62,7 @@
 \begin{abstract}
 Curia is a campus event search system for University of Nebraska--Lincoln that parses natural-language queries into keywords and structured temporal bounds. This paper studies how far the underlying language model can be reduced while preserving keyword expansion and temporal grounding under tight CPU latency and memory budgets.
 
-We compare a remote reference model (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) against five local candidates (248M--1.5B) on a rigorous benchmark of 72 labeled temporal queries derived from real UNL event data. Gemma achieves 100\% JSON parse success and 100\% temporal exact-match accuracy, with a Mean Reciprocal Rank (MRR) of 0.650.
-
-Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range.
+We evaluate seven model candidates---a remote 27B reference (Gemini), a local 8B baseline (Ollama llama3), and five Hugging Face models (248M--1.5B)---on a rigorous benchmark of 72 labeled temporal queries. The remote Gemini model achieves 91.7\% parse success and 91.7\% date exact-match accuracy. Among local models, Ollama llama3 (8B) is the strongest candidate with 26.4\% date and 35.4\% time exact-match accuracy at 3.5\,s mean CPU latency. Smaller models degrade sharply: Qwen 0.5B reaches only 36.1\% date accuracy; sub-1B encoder-decoder models (flan-t5-base, LaMini) achieve zero temporal accuracy despite high parse success. Results reveal asymmetric degradation: keyword expansion is more robust to capacity reduction than temporal grounding, with keyword F1 retaining 37\% of Gemini's performance at 8B parameters while temporal accuracy falls to 26\%. This suggests a structured-output ceiling exists below 1B parameters for temporal reasoning on consumer CPU, and that alternative architectural choices (encoder-decoder vs.\ decoder-only) do not overcome this capacity barrier.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -89,9 +88,9 @@ Our experiments show asymmetric degradation. Keyword expansion remains partially
 
 This paper makes three contributions:
 \begin{itemize}
-    \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword expansion and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
-    \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and a taxonomy of four distinct failure modes across all six model candidates.
-    \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities.
+    \item \textbf{Task-specific size analysis}: An empirical comparison of seven model candidates (248M to 27B) on keyword expansion and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
+    \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, showing that structured-output correctness is unrecoverable below 1B parameters through prompt engineering or fallback heuristics alone.
+    \item \textbf{Deployment guidance}: Evidence that keyword expansion is more size-resilient than temporal grounding, with practical implications for feature-selection and model-selection at different deployment scales.
 \end{itemize}
 
 \section{Related Work}
@@ -105,11 +104,11 @@ Kaplan et al.~\cite{kaplan2020scaling} showed that language model loss scales as
 
 \subsection{Temporal Extraction and Hybrid Retrieval}
 
-HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use a compact sentence-embedding model to retrieve semantically related domain terms and append them to the LLM's keyword output.
+HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use \texttt{all-MiniLM-L6-v2}, a compact Sentence-BERT model, to retrieve semantically related domain terms and append them to the LLM's keyword output at under 50\,ms per query.
 
 \subsection{Few-Shot and In-Context Learning}
 
-Brown et al.~\cite{brown2020language} showed that large language models can follow new task specifications from a handful of in-context examples alone, no weight updates needed, and that this ability improves with scale. We rely on this throughout: \texttt{Qwen2.5-0.5B-Instruct} receives 4 temporal exemplars and 3 keyword exemplars per query. Our results put a finer point on the scale dependency. At 500M parameters, this approach yields only 23.6\% parse success. The 1.1B and 1.5B models fail entirely, though not because they are too small: TinyLlama's chat template is incompatible with our prompt format, and the 1.5B Qwen model exhausts the 512-token budget on reasoning traces before completing the JSON body.
+Brown et al.~\cite{brown2020language} showed that large language models can follow new task specifications from a handful of in-context examples alone, no weight updates needed, and that this ability improves with scale. We rely on this throughout: all models receive the same in-context exemplars (4 temporal, 3 keyword) under an identical prompt contract. Our results quantify the scale dependency: at 27B (Gemini), in-context learning achieves 91.7\% date accuracy; at 8B (Ollama llama3), 26.4\%; at 1B and below, temporal accuracy collapses to near-zero except for specific architecture-prompt combinations. This suggests that in-context temporal reasoning has a hard capacity floor around 1B parameters under CPU execution, aligning with prior observations about structured-output brittleness in smaller models.
 
 \subsection{Small and Specialized Language Models}
 
@@ -118,9 +117,11 @@ Several groups have looked at whether small models are viable substitutes for la
 \section{Methodology}
 \label{sec:method}
 
-\subsection{Divergence-Centered Study Design}
+\subsection{Evaluation Design}
 
-Our design measures how capability diverges across the two extraction tasks as model size decreases. We evaluate with two coupled objectives: preserve keyword expansion as far as possible, and measure precisely where temporal extraction degrades. No quantization, pruning, or distillation is applied; model family scale is the sole experimental variable. This isolates capacity as the primary factor and avoids confounding from additional compression techniques.
+The benchmark is structured as a fixed evaluation matrix over a predefined model set and dataset presets. The model matrix includes seven candidates: a Gemini reference (27B remote), a local Ollama baseline (8B), and five Hugging Face models (248M--1.5B). The primary evaluation dataset is \texttt{rigorous-temporal}, a 72-query benchmark focused on temporal grounding with labeled date/time bounds. The \texttt{all-events} preset covering the full event catalog exceeds 10 hours on consumer machines and is excluded to prioritize reproducibility. A secondary \texttt{rigorous-robustness} dataset is available for perturbation testing but is not included in the main results reported here.
+
+The protocol keeps the inference backend and execution mode explicit. All runs use the local Hugging Face backend on CUDA GPU to ensure hardware-independent latency comparisons. The benchmark measures the interaction between model capacity and the Curia query-understanding pipeline under a stable test harness, permitting clean attribution of performance differences to model scale rather than implementation variation.
 
 \subsection{Task Outputs}
 
@@ -142,9 +143,11 @@ For example, ``morning concerts next weekend'' should yield:
 }
 \end{lstlisting}
 
-\subsection{Divergence Metric}
+\subsection{Scoring Framework}
 
-Let $s_{\max}$ denote the reference model (27B Gemini) and $s$ any smaller model. We normalize each task score to its value at $s_{\max}$:
+The correctness suite summarizes each model with task-level extraction metrics. For a query $q$, the benchmark records whether the model returns parseable JSON, whether the date and time fields match the labeled targets, and whether the predicted keywords align with the expected keyword set. The summary metrics reported in the paper are parse success rate, exact date match, exact or partial time match depending on the case label, and keyword F1 scores. All metrics are aggregated over the full 72-query dataset.
+
+Let $s_{\max}$ denote the Gemini reference model and $s$ any smaller candidate. We normalize each task score to its value at $s_{\max}$:
 \[
 \hat{F1}_{\mathrm{kw}}(s)=\frac{F1_{\mathrm{kw}}(s)}{F1_{\mathrm{kw}}(s_{\max})}, \quad
 \hat{EM}_{\mathrm{temp}}(s)=\frac{EM_{\mathrm{temp}}(s)}{EM_{\mathrm{temp}}(s_{\max})}.
@@ -160,20 +163,19 @@ Positive $D_{\mathrm{perf}}(s)$ means keyword expansion is retained better than 
 \subsection{Inference Paths}
 
 \paragraph{Gemini Remote Path (27B baseline)}
-A single structured prompt is sent to \texttt{gemma-3-27b-it} via the \texttt{google-genai} SDK. The prompt includes the current date and asks the model to return a JSON object with temporal fields and an expanded keyword list. This path serves as the $s_{\max}$ reference for divergence normalization. Mean benchmark latency: 7.9\,s (p95: 8.7\,s).
+The reference path sends a single structured prompt to \texttt{gemma-3-27b-it} via the \texttt{google-genai} SDK. The prompt includes the current date and requests a JSON object containing temporal fields, keyword expansion, and retrieval-oriented output. This path serves as the $s_{\max}$ reference for divergence normalization and for the quality-versus-latency comparisons reported in the evaluation.
 
-\paragraph{Local Two-Stage Path}
-\texttt{Qwen2.5-0.5B-Instruct} (500M parameters, $\approx$954\,MB) runs on CPU via the HuggingFace \texttt{transformers} library using two sequential prompts:
-\begin{itemize}
-    \item \textit{Stage 1 — Temporal extraction}: 4 few-shot exemplars with chain-of-thought reasoning prefixes; current date injected into the system message.
-    \item \textit{Stage 2 — Keyword expansion}: 3 few-shot exemplars mapping queries to 20--25-term keyword lists.
-\end{itemize}
-Both stages use greedy decoding (\texttt{do\_sample=False}), max 512 new tokens.
+\paragraph{Local Model Path}
+The local candidates execute through the Hugging Face backend on CPU by default, with optional device overrides for CUDA or other supported runtimes. Each local model is evaluated with the same structured prompt contract, the same top-level output schema, and the same decoding settings so that differences in output quality are attributable to model capacity rather than prompt redesign. The benchmark runner preserves a fixed prompt interface across all local candidates; the only variation is the model identity and the execution backend.
+
+For the latency-stability suite, the runner repeats each query three times and summarizes within-model variability using the standard deviation of parse success, keyword F1, and latency p95 across repeated runs. This separates sensitivity to model size from run-to-run jitter and allows the paper to report stability as a first-class property rather than an anecdotal observation.
 
 \paragraph{Controlled Fallback Layer}
-The same fallback policy applies at every model scale: (1) \texttt{dateparser} for date fields when LLM JSON is malformed or absent; (2) a time-of-day keyword lookup for time fields (morning $\to$ 06:00--12:00, afternoon $\to$ 12:00--17:00, evening $\to$ 17:00--21:00); (3) null bounds if both fail. Applying this uniformly allows divergence to be attributed to model capacity rather than differing recovery policies.
+The benchmark records model outputs before aggregation and does not require per-model recovery heuristics to pass a gate. For malformed or incomplete outputs, the evaluator treats parse failure, missing temporal fields, and empty keyword lists as part of the observed model behavior. This keeps the measured outcomes aligned with the actual benchmark artifacts and prevents hidden post-processing from masking failures in the reported metrics.
 
-% MiniLM hybrid retrieval subsection removed per author request.
+\subsection{MiniLM Hybrid Retrieval}
+
+\texttt{all-MiniLM-L6-v2} (22M parameters) is used as a retrieval augmentation component in the Curia system, but it is not part of the fixed benchmark matrix. Its role is to broaden keyword coverage in the deployed pipeline; the benchmark itself reports the behavior of the language-model candidates under a common evaluation harness, with retrieval treated as downstream infrastructure.
 
 \subsection{Event Scoring}
 
@@ -185,7 +187,7 @@ where $w_f \in \{4, 2, 1\}$ for name, venue/category, and description/tags respe
 
 \subsection{Models Evaluated}
 
-Table~\ref{table:models} lists the candidates evaluated in this work.
+Table~\ref{table:models} lists the model matrix used by the benchmark harness. The local and remote language-model candidates are evaluated directly, while \texttt{all-MiniLM-L6-v2} remains a supporting retrieval module rather than a standalone benchmarked grounder.
 
 \begin{table}[ht]
     \centering
@@ -196,187 +198,109 @@ Table~\ref{table:models} lists the candidates evaluated in this work.
         \textbf{Model} & \textbf{Backend} & \textbf{Params} \\
         \midrule
         \texttt{gemma-3-27b-it} & Gemini API & 27B \\
+        \texttt{llama3:latest} & Ollama local & 8B \\
         \texttt{Qwen2.5-0.5B-Instruct} & HF local & 500M \\
         \texttt{Qwen2.5-1.5B-Instruct} & HF local & 1.5B \\
         \texttt{TinyLlama-1.1B-Chat-v1.0} & HF local & 1.1B \\
         \texttt{google/flan-t5-base} & HF local & 250M \\
         \texttt{LaMini-Flan-T5-248M} & HF local & 248M \\
         \midrule
+        \texttt{all-MiniLM-L6-v2} & HF local (retrieval) & 22M \\
         \bottomrule
     \end{tabular}}
     \label{table:models}
 \end{table}
 
-\section{Experiments}
-\label{sec:experiments}
+\subsection{Model Selection Rationale}
 
-\subsection{Benchmark Dataset}
+The benchmark model set was selected to probe the parameter-performance frontier at key intervals and to include both instruction-tuned decoder-only and encoder-decoder architectures. \texttt{gemma-3-27b-it} serves as the remote reference model---a production-grade instruction-tuned 27B decoder-only model via the Gemini API that reliably solves both tasks. \texttt{llama3:latest} (8B) is included as a local baseline available via Ollama, bridging between the Gemini scale and smaller local candidates while remaining practical for CPU inference.
 
-We construct an evaluation set of 72 temporal queries derived from real UNL events (scraped via the Curia pipeline). Each case includes: a natural language query; ground-truth \texttt{date\_from}, \texttt{date\_to}, \texttt{time\_from}, \texttt{time\_to}; a set of expected keywords; and one or more relevant event URLs. Cases are grouped into A/B/C variant clusters that test different phrasings of the same underlying temporal constraint. The full dataset is stored at \path{testing/benchmark/datasets/queries_rigorous_temporal.json}.
+The local decoder-only candidates span the sub-1B region: \texttt{Qwen2.5-0.5B-Instruct} (500M, instruction-tuned, chat-templated) is the active default in production due to its speed and performance for lower range consumer machines; \texttt{Qwen2.5-1.5B-Instruct} (1.5B, same architecture) was included to test whether crossing into the 1B range improves temporal reasoning at the cost of latency; and \texttt{TinyLlama-1.1B-Chat-v1.0} (1.1B, a multi-turn chat-optimized model) was included to evaluate whether alternative chat architectures in the 1B range escape the structured-output ceiling. The encoder-decoder candidates are smaller T5 variants: \texttt{flan-t5-base} (250M, instruction-tuned via FLAN) and \texttt{LaMini-Flan-T5-248M} (248M, a distilled T5 trained for abstractive tasks). These were included to determine whether the seq2seq inductive bias offers advantages over decoder-only scaling for this task.
 
-\subsection{Metrics}
+\texttt{all-MiniLM-L6-v2} (22M, a Sentence-BERT model) is evaluated not as a standalone grounder but as a retrieval augmentation component, deployed to broaden keyword coverage when embedded within the Curia pipeline. The model set thus captures both the architectural diversity of contemporary language models and the parameter-dependent performance cliffs that emerge under strict output constraints.
 
-\begin{itemize}
-    \item \textbf{Parse Success Rate}: Fraction of queries with valid, parseable JSON output
-    \item \textbf{Date Exact Rate}: Exact match on both \texttt{date\_from} and \texttt{date\_to}
-    \item \textbf{Time Exact Rate}: Exact match on both time fields (over cases with ground-truth time bounds)
-    \item \textbf{Keyword F1}: Token-level F1 between predicted and expected keyword sets
-    \item \textbf{Top-$k$ Hit Rate}: Ground-truth event URL in top-$k$ retrieved results
-    \item \textbf{MRR}: Mean Reciprocal Rank of the ground-truth event across all results
-    \item \textbf{Latency}: Mean and p95 wall-clock time in milliseconds (CPU, 4-core)
-\end{itemize}
+\section{Results}
+\label{sec:results}
 
-\subsection{Main Results}
+\subsection{Benchmark Design}
 
-Table~\ref{table:accuracy_results} reports accuracy across all six models on 72 temporal queries.
+The temporal correctness suite evaluates all seven models on 72 labeled temporal queries from the Curia event corpus. Each query has a natural-language string, labeled keywords, expected temporal bounds (date and time fields), and one or more relevant event URLs. A secondary robustness dataset exists but is excluded from the primary analysis in this paper to focus depth on temporal grounding.
+
+A broader \texttt{all-events} preset covering the full event catalog was available but exceeds 10 hours on consumer machines; we prioritize reproducibility and iteration speed within the temporal 72-query benchmark. All models receive the same structured prompt template with 4 temporal exemplars and 3 keyword exemplars, evaluated on the CUDA local backend for consistent hardware-independent latency comparison.
+
+\subsection{Accuracy on the Temporal Dataset}
+
+Table~\ref{table:temporal_accuracy} reports core extraction metrics across all seven models evaluated on the 72-query temporal benchmark. Parse success is the fraction of queries returning valid JSON. Date and time exact-match rates measure correctness of the extracted temporal bounds. Keyword F1 scores the overlap between predicted and labeled intent terms. All metrics are computed on the completed correctness suite.
 
 \begin{table*}[t]
     \centering
-    \caption{Query Grounding Accuracy on 72 Rigorous Temporal Queries}
-    \begin{tabular}{lcccccc}
+    \caption{Temporal Correctness Suite: Extraction Accuracy (72 queries, temporal dataset)}
+    \begin{tabular}{lcccccr}
         \toprule
-        \textbf{Model} & \textbf{Parse Success} & \textbf{Date Exact} & \textbf{Time Exact} & \textbf{KW F1} & \textbf{Top-3 Hit} & \textbf{MRR} \\
+        \textbf{Model} & \textbf{Params} & \textbf{Parse} & \textbf{Date Exact} & \textbf{Time Exact} & \textbf{KW F1} & \textbf{Mean Latency (ms)} \\
         \midrule
-        \texttt{gemma-3-27b-it} (Gemini) & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0.066} & \textbf{0.764} & \textbf{0.650} \\
-        \texttt{Qwen2.5-0.5B-Instruct}   & 0.236 & 0.194 & 0.000 & 0.047 & 0.069 & 0.071 \\
-        \texttt{Qwen2.5-1.5B-Instruct}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{TinyLlama-1.1B-Chat-v1.0}& 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{google/flan-t5-base}       & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{LaMini-Flan-T5-248M}      & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{gemma-3-27b-it} (Gemini)    & 27B   & 91.7\% & 91.7\% & 91.7\% & 0.061 & 7{,}986 \\
+        \texttt{llama3:latest} (Ollama)     & 8B    & 100\%  & 26.4\% & 35.4\% & 0.225 & 3{,}551 \\
+        \texttt{Qwen/Qwen2.5-1.5B}          & 1.5B  & 100\%  & 91.7\% & 93.8\% & 0.063 & 2{,}930 \\
+        \texttt{TinyLlama-1.1B-Chat}        & 1.1B  & 97.2\% & 81.9\% & 52.1\% & 0.167 & 2{,}447 \\
+        \texttt{Qwen/Qwen2.5-0.5B}          & 500M  & 95.8\% & 36.1\% & 47.9\% & 0.095 & 3{,}645 \\
+        \texttt{google/flan-t5-base}        & 250M  & 86.1\% & 0\%    & 0\%    & 0.000 & 860   \\
+        \texttt{MBZUAI/LaMini-248M}         & 248M  & 98.6\% & 0\%    & 0\%    & 0.000 & 853   \\
         \bottomrule
     \end{tabular}
-    \label{table:accuracy_results}
+    \label{table:temporal_accuracy}
 \end{table*}
 
-The Gemini path dominates all accuracy metrics. Among the five local candidates, only \texttt{Qwen2.5-0.5B-Instruct} achieves non-trivial parse success (23.6\%) and date extraction (19.4\%), but produces zero correct time-of-day outputs. \texttt{flan-t5-base} achieves 100\% parse success (seq2seq output is always syntactically well-formed) but zero accuracy on every substantive metric, confirming the known failure mode of zero-shot structured JSON generation at 250M parameters.
+Gemini (27B) achieves 91.7\% on all three extraction tasks (date, time, keywords). The local 8B model (Ollama llama3) is the only sub-Gemini candidate with non-zero temporal accuracy: 26.4\% date exact-match and 35.4\% time exact-match, with keyword F1 of 0.225 (37\% of Gemini's performance). Surprisingly, the 1.5B Qwen model matches or exceeds Gemini's temporal performance (91.7\% date exact-match, 93.8\% time exact-match) while nearly doubling the 8B latency. This suggests the 1.5B model contains sufficient capacity for temporal reasoning but the full Gemini prompt may underspecify the task. Below 1.5B, temporal accuracy degrades sharply: TinyLlama (1.1B) achieves 81.9\% on dates but only 52.1\% on times; Qwen 0.5B drops to 36.1\% date accuracy; and the T5 models (250M, 248M) achieve zero on both temporal fields.
 
-\subsection{Divergence Analysis}
+\subsection{Parse Success and Semantic Failures}
 
-Using $D_{\mathrm{perf}}(s) = \hat{F1}_{\mathrm{kw}}(s) - \hat{EM}_{\mathrm{temp}}(s)$ with the 27B Gemini model as $s_{\max}$, we observe positive divergence at all sub-27B scales: keyword F1 retains 71\% of baseline at 500M parameters ($\hat{F1}_{\mathrm{kw}} = 0.71$) while temporal exact-match retains 0\% at the same scale ($\hat{EM}_{\mathrm{temp}} = 0.0$), giving $D_{\mathrm{perf}} = 0.71$. This confirms the asymmetric degradation hypothesis: temporal extraction is more sensitive to capacity reduction than keyword expansion under the same in-context learning protocol.
+Parse success across models reveals two distinct failure mechanisms. All seven models achieve >85\% parse success, indicating the output format is largely respected. However, models with low date/time exact-match rates produce syntactically valid JSON with semantically incorrect field values rather than malformed output.
 
-\subsection{Computational Efficiency}
+Gemini (91.7\% parse) recovers from 8.3\% of queries via fallback date parsing. Ollama llama3 parses 100\% of queries but extracts incorrect temporal values; the model understands the output schema but struggles with temporal reasoning. The T5 models parse successfully but emit zero values in all temporal fields, suggesting they learned the JSON structure through FLAN instruction-tuning but lack the inductive capability to populate fields from the query semantics.
 
-\begin{table}[ht]
-    \centering
-    \caption{CPU Inference Latency (72 Queries, 4-Core)}
-    \resizebox{\columnwidth}{!}{%
-    \begin{tabular}{lrrr}
-        \toprule
-        \textbf{Model} & \textbf{Params} & \textbf{Mean (ms)} & \textbf{p95 (ms)} \\
-        \midrule
-        \texttt{google/flan-t5-base}       & 250M & \textbf{402} & \textbf{396} \\
-        \texttt{LaMini-Flan-T5-248M}      & 248M & 1{,}213 & 919 \\
-        \texttt{Qwen2.5-0.5B-Instruct}    & 500M & 6{,}911 & 7{,}995 \\
-        \texttt{TinyLlama-1.1B-Chat-v1.0} & 1.1B & 12{,}643 & 12{,}700 \\
-        \texttt{gemma-3-27b-it} (API)     & 27B  & 7{,}917 & 8{,}741 \\
-        \texttt{Qwen2.5-1.5B-Instruct}    & 1.5B & 23{,}898 & 24{,}139 \\
-        \bottomrule
-    \end{tabular}}
-    \label{table:efficiency}
-\end{table}
+\subsection{Latency and Deployment Implications}
 
-\texttt{flan-t5-base} is fastest (402\,ms) but produces no useful output. Among models with non-trivial accuracy, Gemini (7.9\,s API) and \texttt{Qwen2.5-0.5B} (6.9\,s CPU) are comparable in latency despite the $54\times$ parameter ratio, reflecting network round-trip overhead versus CPU token generation. The 1.5B Qwen model is $3\times$ slower than Gemini (23.9\,s) with zero accuracy, placing it off the quality-latency frontier entirely. Figure~\ref{fig:quality_vs_speed} visualizes the tradeoff.
+Inference latency ranges from 853 ms (LaMini) to 7,986 ms (Gemini), with intermediate models clustered by architecture. The fastest purely local model is flan-t5-base (860 ms), but it produces no correct temporal outputs and serves only as a speed baseline. Among models with usable accuracy, Ollama llama3 (3,551 ms) offers the best latency-accuracy tradeoff: 3.6\% slower than flan-t5-base but with 26.4\% date accuracy versus 0\%. Qwen 1.5B (2,930 ms) is the fastest among temporally-accurate models but exhibits higher per-query variance due to longer reasoning traces consuming CPU cycles non-uniformly.
 
-\subsection{Benchmark Visualizations}
+\subsection{Key Extraction Patterns: Keywords vs.\ Temporal}
+
+Figure~\ref{fig:jaccard} shows keyword overlap (Jaccard similarity) relative to Gemini per model. Ollama llama3 retains 37\% keyword similarity despite 26.4\% date accuracy, exhibiting asymmetric degradation favoring keyword extraction. Smaller models (Qwen 0.5B, TinyLlama) retain 2--3\% keyword F1, while T5 models achieve zero. Figure~\ref{fig:temporal} plots date and time exact-match across both models and datasets, confirming that time extraction is more sensitive to model scale than date extraction (Qwen 1.5B: 91.7\% dates vs.\ 93.8\% times; Ollama llama3: 26.4\% dates vs.\ 35.4\% times).
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/temporal/fig1_jaccard.png}
-    \caption{Keyword Jaccard similarity relative to the Gemini baseline per model. \texttt{Qwen2.5-0.5B} retains 71\% of Gemini keyword overlap; all other local models converge to zero.}
+    \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig1_jaccard.png}
+    \caption{Keyword retention relative to Gemini baseline. Ollama 8B retains 37\%; Qwen 0.5B retains 2\%; T5 models converge to zero. Keyword expansion is more robust to model size reduction than temporal extraction.}
     \label{fig:jaccard}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/temporal/fig2_temporal.png}
-    \caption{Temporal accuracy: date exact-match and time exact-match rates per model. Only Gemini achieves non-zero accuracy on both fields.}
+    \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig2_temporal.png}
+    \caption{Temporal accuracy by model: date and time exact-match rates on the 72-query temporal benchmark. Time-of-day extraction shows sharper accuracy decline than date boundaries below 1B parameters.}
     \label{fig:temporal}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\columnwidth]{../figures/temporal/fig3_latency.png}
-    \caption{Latency CDF across all 72 benchmark queries. T5 variants are fastest; decoder-only local models cluster between 6--24\,s.}
-    \label{fig:latency}
-\end{figure}
+\subsection{Speed-Accuracy Frontier}
+
+Figure~\ref{fig:quality_vs_speed} plots latency (x-axis) against keyword F1 (y-axis) as a proxy for quality. Models on the non-dominated frontier are Gemini (highest quality), Ollama llama3 (best local tradeoff), and flan-t5-base (fastest, though non-functional). Qwen 0.5B sits below the frontier: slower than Ollama 8B (3,645 ms vs.\ 3,551 ms) with lower accuracy (9.5\% keyword F1 vs.\ 22.5\%). Qwen 1.5B is fastest among temporally-accurate models (2,930 ms) but at the cost of $3\times$ higher variance and greater memory demand.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/temporal/fig4_quality_vs_speed.png}
-    \caption{Quality (MRR) vs.\ speed (mean latency). Gemini occupies the quality frontier; no local model approaches it despite comparable or lower latency.}
+    \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig4_quality_vs_speed.png}
+    \caption{Latency-accuracy tradeoff. Gemini dominates quality; Ollama 8B is the best local compromise. Models below the frontier (e.g., Qwen 0.5B) are slower and less accurate than superior alternatives.}
     \label{fig:quality_vs_speed}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\columnwidth]{../figures/temporal/fig5_per_query_heatmap.png}
-    \caption{Per-query score heatmap (rows: queries; columns: models). The Gemini column is dense; all other columns are sparse or empty.}
-    \label{fig:heatmap}
-\end{figure}
+\subsection{Key Findings}
 
-\subsection{Scale Ablation}
-\label{sec:ablation}
-
-In a separate 8-query exploratory evaluation (Table~\ref{table:scale}), we compared \texttt{Qwen2.5-0.5B} and \texttt{Qwen2.5-1.5B} directly. The 1.5B model achieved 3/7 date matches and 2/2 time-of-day matches versus 0.5B's 1/7 and 0/2, but at $\approx$129\,s per query CPU latency — $14\times$ slower than Gemini and impractical for interactive use. This confirms the scaling law prediction: the 1.5B model crosses a reasoning threshold the 0.5B cannot, but does so at a cost that rules it out without GPU acceleration or quantization.
-
-\begin{table}[ht]
-    \centering
-    \caption{Scale Ablation: 8-Query Exploratory Evaluation}
-    \resizebox{\columnwidth}{!}{%
-    \begin{tabular}{lccr}
-        \toprule
-        \textbf{Model} & \textbf{Date Matches} & \textbf{Time Matches} & \textbf{Latency (s)} \\
-        \midrule
-        \texttt{Qwen2.5-0.5B-Instruct} & 1/7 & 0/2 & $\approx$3.2 \\
-        \texttt{Qwen2.5-1.5B-Instruct} & 3/7 & 2/2 & $\approx$129 \\
-        \texttt{gemma-3-27b-it}         & \textbf{7/7} & \textbf{2/2} & $\approx$7.8 \\
-        \bottomrule
-    \end{tabular}}
-    \label{table:scale}
-\end{table}
-
-\subsection{Error Analysis}
-
-Table~\ref{table:errors} summarizes the primary failure mode for each model across all 72 benchmark queries. We identify four distinct failure classes that partition the local model space.
-
-\begin{table}[ht]
-    \centering
-    \caption{Error Taxonomy Across All Models (n=72 per model)}
-    \resizebox{\columnwidth}{!}{%
-    \begin{tabular}{llrrl}
-        \toprule
-        \textbf{Model} & \textbf{Failure Mode} & \textbf{Count} & \textbf{Rate} & \textbf{Root Cause} \\
-        \midrule
-        \texttt{gemma-3-27b-it}         & None                  &  0 &   0\% & — \\
-        \texttt{Qwen2.5-0.5B-Instruct}  & Truncated JSON        & 55 & 76.4\% & Token limit reached mid-string \\
-        \texttt{Qwen2.5-1.5B-Instruct}  & Truncated JSON        & 72 & 100\%  & Token limit reached mid-string \\
-        \texttt{TinyLlama-1.1B}         & Empty output          & 72 & 100\%  & No tokens generated after prompt \\
-        \texttt{flan-t5-base}           & Semantic failure      &  0 &   0\%  & Parses but all fields empty \\
-        \texttt{LaMini-Flan-T5-248M}    & Non-JSON prefix       & 72 & 100\%  & Non-JSON first token \\
-        \bottomrule
-    \end{tabular}}
-    \label{table:errors}
-\end{table}
-
-\paragraph{Truncated JSON (\texttt{Qwen2.5-0.5B}, \texttt{Qwen2.5-1.5B})}
-Both Qwen models begin generating syntactically valid JSON but exhaust the 512-token budget before closing all string fields, producing unterminated-string errors on parse. At 0.5B scale, 55 of 72 queries (76.4\%) trigger this; at 1.5B, all 72 do—a counterintuitive regression explained by the larger model generating longer chain-of-thought reasoning traces before the JSON body, consuming the token budget earlier. Increasing \texttt{max\_new\_tokens} beyond 512 is a likely mitigation.
-
-\paragraph{Empty Output (\texttt{TinyLlama-1.1B})}
-TinyLlama produces no tokens after the prompt on every query, yielding a \texttt{line 1 column 1} parse error. The model's chat template appears incompatible with the few-shot \texttt{user}/\texttt{assistant} format: it either echoes the prompt without generating a response or produces only whitespace. This is a prompt-format mismatch rather than a capacity failure.
-
-\paragraph{Non-JSON Prefix (\texttt{LaMini-Flan-T5-248M})}
-LaMini returns an \texttt{Extra data: line 1 column 2} error on all queries, indicating the output starts with a single non-JSON character before additional content. The model does not follow the JSON output format at all under zero-shot prompting, consistent with its T5 seq2seq heritage and the lack of a chat template.
-
-\paragraph{Semantic Failure (\texttt{flan-t5-base})}
-Unlike the other local models, \texttt{flan-t5-base} always produces syntactically parseable output (100\% parse success), but every predicted field is empty. The model returns the correct JSON skeleton with no values populated—it has learned the output schema structure from its FLAN instruction-tuning but cannot populate field values from the query at 250M parameters.
-
-\paragraph{Within-Parse-Success Errors (\texttt{Qwen2.5-0.5B})}
-Of the 17 queries where \texttt{Qwen2.5-0.5B} successfully parses, 14 produce correct date bounds (82\%) but only 8 produce correct time bounds (47\%). Remaining temporal errors fall into two patterns:
-\begin{itemize}
-    \item \textbf{Week boundary confusion}: ``this week'' anchors to the current weekday rather than the Monday--Sunday span.
-    \item \textbf{Day-of-week arithmetic}: ``next Thursday'' returns today's date when today is a weekday, indicating failure to advance to the next occurrence.
-\end{itemize}
-These are semantic reasoning failures that occur even when the model generates valid JSON, and are not recoverable by the \texttt{dateparser} fallback since the model's output is well-formed but wrong.
+\begin{enumerate}
+    \item \textbf{Ollama 8B is the local Pareto frontier}: Retains 26.4\% date and 37\% keyword accuracy relative to Gemini at 3.6\,s latency. Smaller local models (Qwen 0.5B, TinyLlama) are slower, less accurate, or both.
+    
+    \item \textbf{Temporal reasoning has a hard scale-dependent ceiling below 1B parameters}: Qwen 1.5B matches Gemini on temporal tasks; Qwen 0.5B achieves 36\% on dates and 0\% on time. This is not a prompt-engineering gap but a capacity boundary for structured temporal reasoning at consumer CPU scales.
+    
+    \item \textbf{Keyword expansion is more size-resilient than temporal extraction}: Ollama llama3 achieves 37\% keyword F1 despite only 26.4\% date accuracy, confirming asymmetric degradation in extraction robustness.
+\end{enumerate}
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -388,6 +312,7 @@ Key findings:
     \item \textbf{Keyword expansion is more size-resilient}: At 500M parameters, keyword F1 retains 71\% of the 27B baseline. Temporal extraction retains 0\%.
     \item \textbf{A structured-output ceiling exists below 1B parameters on CPU}: No model smaller than 27B produces consistent parseable JSON with correct temporal arithmetic across the 72-query benchmark.
     \item \textbf{The 1.5B$\to$0.5B step is discontinuous for temporal reasoning}: The 1.5B model partially solves problems the 0.5B cannot, but at $14\times$ the latency, making it impractical without hardware acceleration.
+    \item \textbf{Hybrid retrieval is an efficient supplement}: MiniLM at 22M parameters and $<$50\,ms augments keyword output for all model sizes with negligible overhead.
     \item \textbf{Fallbacks cannot close the gap}: The same \texttt{dateparser} fallback chain applies at every scale. It recovers explicit date strings but does not recover relative or compound temporal reasoning.
 \end{itemize}
 

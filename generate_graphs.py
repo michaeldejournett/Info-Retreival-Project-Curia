@@ -73,9 +73,11 @@ def fig1_jaccard_bar(out_dir):
     ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(out_dir / "fig1_jaccard.png", dpi=150, bbox_inches="tight")
+    correctness_dir = out_dir / "temporal" / "correctness"
+    correctness_dir.mkdir(parents=True, exist_ok=True)
+    plt.savefig(correctness_dir / "fig1_jaccard.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("  fig1_jaccard.png", flush=True)
+    print("  temporal/correctness/fig1_jaccard.png", flush=True)
 
 
 def fig2_temporal_bar(out_dir):
@@ -107,9 +109,11 @@ def fig2_temporal_bar(out_dir):
     ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(out_dir / "fig2_temporal.png", dpi=150, bbox_inches="tight")
+    correctness_dir = out_dir / "temporal" / "correctness"
+    correctness_dir.mkdir(parents=True, exist_ok=True)
+    plt.savefig(correctness_dir / "fig2_temporal.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("  fig2_temporal.png", flush=True)
+    print("  temporal/correctness/fig2_temporal.png", flush=True)
 
 
 def fig3_latency_bar(out_dir):
@@ -137,9 +141,11 @@ def fig3_latency_bar(out_dir):
     ax.set_title("Query Latency Comparison", fontsize=12, fontweight="bold", pad=15)
 
     plt.tight_layout()
-    plt.savefig(out_dir / "fig3_latency.png", dpi=150, bbox_inches="tight")
+    latency_dir = out_dir / "temporal" / "latency"
+    latency_dir.mkdir(parents=True, exist_ok=True)
+    plt.savefig(latency_dir / "fig3_latency.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("  fig3_latency.png", flush=True)
+    print("  temporal/latency/fig3_latency.png", flush=True)
 
 
 def fig4_quality_vs_speed(out_dir):
@@ -153,6 +159,9 @@ def fig4_quality_vs_speed(out_dir):
     sizes = [max(30, m["params_B"] * 60) for m in models]
     colors = [STATUS_COLORS[m["status"]] for m in models]
     labels = [m["short"] for m in models]
+
+    latency_dir = out_dir / "temporal" / "latency"
+    latency_dir.mkdir(parents=True, exist_ok=True)
 
     scatter = ax.scatter(x, y, s=sizes, c=colors, alpha=0.7, edgecolors="black", linewidth=1.5)
 
@@ -172,15 +181,15 @@ def fig4_quality_vs_speed(out_dir):
             bbox=dict(boxstyle="round,pad=0.5", facecolor="yellow", alpha=0.3))
 
     plt.tight_layout()
-    plt.savefig(out_dir / "fig4_quality_vs_speed.png", dpi=150, bbox_inches="tight")
+    plt.savefig(latency_dir / "fig4_quality_vs_speed.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("  fig4_quality_vs_speed.png", flush=True)
+    print("  temporal/latency/fig4_quality_vs_speed.png", flush=True)
 
 
 def fig5_per_query_heatmap(live_runs, out_dir):
     """Per-query Jaccard heatmap (only if live runs exist)."""
     if not live_runs:
-        print("  fig5_per_query_heatmap.png (skipped — no live run files)", flush=True)
+        print("  temporal/correctness/fig5_per_query_heatmap.png (skipped — no live run files)", flush=True)
         return
 
     queries = live_runs[0]["queries"]
@@ -205,9 +214,11 @@ def fig5_per_query_heatmap(live_runs, out_dir):
     ax.set_ylabel("Query", fontsize=11, fontweight="bold")
 
     plt.tight_layout()
-    plt.savefig(out_dir / "fig5_per_query_heatmap.png", dpi=150, bbox_inches="tight")
+    correctness_dir = out_dir / "temporal" / "correctness"
+    correctness_dir.mkdir(parents=True, exist_ok=True)
+    plt.savefig(correctness_dir / "fig5_per_query_heatmap.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("  fig5_per_query_heatmap.png", flush=True)
+    print("  temporal/correctness/fig5_per_query_heatmap.png", flush=True)
 
 
 def main():
@@ -229,7 +240,7 @@ def main():
 
     live_runs = load_run_files(args.run_files) if args.run_files else []
 
-    print(f"Generating figures in {out_dir}/:", flush=True)
+    print(f"Generating figures in {out_dir}/temporal/:", flush=True)
     fig1_jaccard_bar(out_dir)
     fig2_temporal_bar(out_dir)
     fig3_latency_bar(out_dir)
