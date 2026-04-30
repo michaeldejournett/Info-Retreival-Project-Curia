@@ -63,7 +63,7 @@ Curia is a campus event search system for University of Nebraska--Lincoln that p
 
 We compare a remote reference model (\texttt{gemma-3-27b-it}, 27B parameters via the Gemini API) against five local candidates (248M--1.5B) on a rigorous benchmark of 72 labeled temporal queries derived from real UNL event data. Gemma achieves 100\% JSON parse success and 100\% temporal exact-match accuracy, with a Mean Reciprocal Rank (MRR) of 0.650.
 
-Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range. Finally, a lightweight hybrid retrieval module (\texttt{all-MiniLM-L6-v2}, 22M parameters) augments keyword lists for all model paths in under 50\,ms, improving semantic coverage without increasing the primary model size.
+Among the local models, only \texttt{Qwen2.5-0.5B-Instruct} reaches non-trivial temporal accuracy, with 23.6\% parse success and 19.4\% date exact-match at 6.9\,s mean CPU latency; the remaining local candidates either fail to follow the JSON format or emit syntactically valid but semantically invalid outputs. Results show asymmetric degradation: keyword expansion remains partially functional at 500M parameters, while temporal grounding collapses sharply, suggesting a structured-output ceiling around the 1B-parameter range.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -91,7 +91,7 @@ This paper makes three contributions:
 \begin{itemize}
     \item \textbf{Task-specific size analysis}: An empirical comparison of six model candidates (248M to 27B) on keyword expansion and temporal grounding within the same event-search pipeline, evaluated on a benchmark of 72 labeled temporal queries.
     \item \textbf{Failure characterization}: Documentation of how and where temporal extraction breaks down as model capacity decreases, including the role and limits of rule-based fallbacks and a taxonomy of four distinct failure modes across all six model candidates.
-    \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities, including the case for a small hybrid retrieval module as a lightweight substitute for LLM-based keyword expansion.
+    \item \textbf{Deployment guidance}: Practical guidance for selecting model scales based on feature priorities.
 \end{itemize}
 
 \section{Related Work}
@@ -105,7 +105,7 @@ Kaplan et al.~\cite{kaplan2020scaling} showed that language model loss scales as
 
 \subsection{Temporal Extraction and Hybrid Retrieval}
 
-HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use \texttt{all-MiniLM-L6-v2}, a compact Sentence-BERT model, to retrieve semantically related domain terms and append them to the LLM's keyword output at under 50\,ms per query.
+HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use a compact sentence-embedding model to retrieve semantically related domain terms and append them to the LLM's keyword output.
 
 \subsection{Few-Shot and In-Context Learning}
 
@@ -173,9 +173,7 @@ Both stages use greedy decoding (\texttt{do\_sample=False}), max 512 new tokens.
 \paragraph{Controlled Fallback Layer}
 The same fallback policy applies at every model scale: (1) \texttt{dateparser} for date fields when LLM JSON is malformed or absent; (2) a time-of-day keyword lookup for time fields (morning $\to$ 06:00--12:00, afternoon $\to$ 12:00--17:00, evening $\to$ 17:00--21:00); (3) null bounds if both fail. Applying this uniformly allows divergence to be attributed to model capacity rather than differing recovery policies.
 
-\subsection{MiniLM Hybrid Retrieval}
-
-\texttt{all-MiniLM-L6-v2} (22M parameters) embeds the query and a pre-computed vocabulary of 384 domain terms drawn from the backend keyword corpus. The top-$k$ nearest neighbors by cosine similarity are appended to the LLM's keyword list. The corpus is embedded once at startup; retrieval adds under 50\,ms per query. This module is active for all model paths.
+% MiniLM hybrid retrieval subsection removed per author request.
 
 \subsection{Event Scoring}
 
@@ -187,7 +185,7 @@ where $w_f \in \{4, 2, 1\}$ for name, venue/category, and description/tags respe
 
 \subsection{Models Evaluated}
 
-Table~\ref{table:models} lists all six candidates evaluated in this work. \texttt{all-MiniLM-L6-v2} is used exclusively for hybrid retrieval augmentation and is not evaluated as a standalone grounder.
+Table~\ref{table:models} lists the candidates evaluated in this work.
 
 \begin{table}[ht]
     \centering
@@ -204,7 +202,6 @@ Table~\ref{table:models} lists all six candidates evaluated in this work. \textt
         \texttt{google/flan-t5-base} & HF local & 250M \\
         \texttt{LaMini-Flan-T5-248M} & HF local & 248M \\
         \midrule
-        \texttt{all-MiniLM-L6-v2} & HF local (retrieval) & 22M \\
         \bottomrule
     \end{tabular}}
     \label{table:models}
@@ -244,7 +241,7 @@ Table~\ref{table:accuracy_results} reports accuracy across all six models on 72 
         \texttt{Qwen2.5-0.5B-Instruct}   & 0.236 & 0.194 & 0.000 & 0.047 & 0.069 & 0.071 \\
         \texttt{Qwen2.5-1.5B-Instruct}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
         \texttt{TinyLlama-1.1B-Chat-v1.0}& 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \texttt{flan-t5-base}             & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+        \texttt{google/flan-t5-base}       & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
         \texttt{LaMini-Flan-T5-248M}      & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
         \bottomrule
     \end{tabular}
@@ -267,7 +264,7 @@ Using $D_{\mathrm{perf}}(s) = \hat{F1}_{\mathrm{kw}}(s) - \hat{EM}_{\mathrm{temp
         \toprule
         \textbf{Model} & \textbf{Params} & \textbf{Mean (ms)} & \textbf{p95 (ms)} \\
         \midrule
-        \texttt{flan-t5-base}             & 250M & \textbf{402} & \textbf{396} \\
+        \texttt{google/flan-t5-base}       & 250M & \textbf{402} & \textbf{396} \\
         \texttt{LaMini-Flan-T5-248M}      & 248M & 1{,}213 & 919 \\
         \texttt{Qwen2.5-0.5B-Instruct}    & 500M & 6{,}911 & 7{,}995 \\
         \texttt{TinyLlama-1.1B-Chat-v1.0} & 1.1B & 12{,}643 & 12{,}700 \\
@@ -391,7 +388,6 @@ Key findings:
     \item \textbf{Keyword expansion is more size-resilient}: At 500M parameters, keyword F1 retains 71\% of the 27B baseline. Temporal extraction retains 0\%.
     \item \textbf{A structured-output ceiling exists below 1B parameters on CPU}: No model smaller than 27B produces consistent parseable JSON with correct temporal arithmetic across the 72-query benchmark.
     \item \textbf{The 1.5B$\to$0.5B step is discontinuous for temporal reasoning}: The 1.5B model partially solves problems the 0.5B cannot, but at $14\times$ the latency, making it impractical without hardware acceleration.
-    \item \textbf{Hybrid retrieval is an efficient supplement}: MiniLM at 22M parameters and $<$50\,ms augments keyword output for all model sizes with negligible overhead.
     \item \textbf{Fallbacks cannot close the gap}: The same \texttt{dateparser} fallback chain applies at every scale. It recovers explicit date strings but does not recover relative or compound temporal reasoning.
 \end{itemize}
 
