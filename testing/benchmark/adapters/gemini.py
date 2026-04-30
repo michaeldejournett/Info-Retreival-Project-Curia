@@ -12,6 +12,11 @@ from .base import BaseModelAdapter
 
 
 class GeminiAdapter(BaseModelAdapter):
+    # Gemini's genai client has resource cleanup issues in concurrent threads;
+    # creating many clients in parallel exhausts connection pools and causes hangs.
+    # Running serially prevents resource contention and client lifecycle problems.
+    is_concurrent_safe = False
+
     def extract(self, query: str) -> ModelInvocationResult:
         started = time.perf_counter()
         load_project_env_once()
@@ -38,12 +43,14 @@ class GeminiAdapter(BaseModelAdapter):
 
         raw_text = ""
         try:
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=self.build_prompt(query),
-            )
-            raw_text = (getattr(response, "text", "") or "").strip()
+            # Use context manager to ensure client resources are properly cleaned up.
+            # This prevents connection pool exhaustion when creating many client instances.
+            with genai.Client(api_key=api_key) as client:
+                response = client.models.generate_content(
+                    model=self.model_name,
+                    contents=self.build_prompt(query),
+                )
+                raw_text = (getattr(response, "text", "") or "").strip()
             payload, parse_error = parse_json_object(raw_text)
             if payload is None:
                 return ModelInvocationResult(
