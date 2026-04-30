@@ -1,0 +1,341 @@
+{
+  "gate_profile": "latency-stability",
+  "model_results": [
+    {
+      "model_key": "ollama:llama3:latest",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 4038.0657500063535,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.0,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.002428357910160814,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 46.073251018130456,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "gemini:gemma-3-27b-it",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 9436.160074990767,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.004629629629629629,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.006547285010986528,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0010623750075854127,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 363.10585504008816,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 3326.6653749960824,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.0,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 84.91208739194593,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 1839.9965000062366,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.0,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 30.93624379554534,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 2460.7497999968473,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.0,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 6.780392276711048,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:google/flan-t5-base",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 1091.5851000099792,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.06944444444444445,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 13.065748158842698,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:MBZUAI/LaMini-Flan-T5-248M",
+      "passed": true,
+      "checks": [
+        {
+          "name": "latency_p95_ms",
+          "actual": 1502.2545250176336,
+          "expected": 15000.0,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "timeout_rate",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "error_rate",
+          "actual": 0.013888888888888888,
+          "expected": 0.25,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "parse_success_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1_stddev",
+          "actual": 0.0,
+          "expected": 0.1,
+          "comparator": "<=",
+          "passed": true
+        },
+        {
+          "name": "latency_p95_stddev_ms",
+          "actual": 32.845326836599774,
+          "expected": 4000.0,
+          "comparator": "<=",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
