@@ -84,7 +84,7 @@ This paper studies that tension directly in Curia, a campus event search system 
     \item What model size offers the best tradeoff among stability, accuracy, and latency?
 \end{enumerate}
 
-Our experiments show asymmetric degradation. Keyword expansion remains partially functional at 500M parameters, while temporal structured output collapses entirely below that size. A sub-1B structured-output ceiling appears where models either time out or produce malformed JSON on our 72-query rigorous benchmark.
+Our experiments show asymmetric degradation across tasks and datasets. Temporal grounding is more fragile than keyword expansion under perturbation, and performance does not scale monotonically with parameter count alone. In particular, mid-scale local models (0.5B--1.5B) can remain usable under the correctness gate profile, while some very small and some endpoint-dependent configurations fail critical checks.
 
 This paper makes three contributions:
 \begin{itemize}
@@ -107,8 +107,6 @@ Kaplan et al.~\cite{kaplan2020scaling} showed that language model loss scales as
 HeidelTime~\cite{strotgen2010heideltime} is a rule-based system for extracting and normalizing temporal expressions using hand-crafted grammars. It works well on standard patterns but needs domain-specific tuning for new text types. We use \texttt{dateparser} in a similar capacity as a fallback: when the LLM returns malformed JSON, it tries to recover any parseable date strings. The catch is that it only fires on parse failures---when the model returns valid JSON with wrong dates, which is the main failure we document, the fallback never gets a chance to run. For keyword expansion, Reimers and Gurevych~\cite{reimers2019sentencebert} showed that Siamese BERT networks produce dense sentence embeddings well-suited for semantic similarity search. We use \texttt{all-MiniLM-L6-v2}, a compact Sentence-BERT model, to retrieve semantically related domain terms and append them to the LLM's keyword output at under 50\,ms per query.
 
 \subsection{Few-Shot and In-Context Learning}
-
-Brown et al.~\cite{brown2020language} showed that large language models can follow new task specifications from a handful of in-context examples alone, no weight updates needed, and that this ability improves with scale. We rely on this throughout: all models receive the same in-context exemplars (4 temporal, 3 keyword) under an identical prompt contract. Our results quantify the scale dependency: at 27B (Gemini), in-context learning achieves 91.7\% date accuracy; at 8B (Ollama llama3), 26.4\%; at 1B and below, temporal accuracy collapses to near-zero except for specific architecture-prompt combinations. This suggests that in-context temporal reasoning has a hard capacity floor around 1B parameters under CPU execution, aligning with prior observations about structured-output brittleness in smaller models.
 
 Brown et al.~\cite{brown2020language} showed that large language models can follow new task specifications from a handful of in-context examples alone, no weight updates needed, and that this ability improves with scale. We rely on this throughout: all models receive the same in-context exemplars (4 temporal, 3 keyword) under an identical prompt contract. Our results quantify the scale dependency: the 27B Gemini reference reliably produces correct temporal bounds across the suite, while local models show heterogeneous behavior. The Qwen 1.5B run achieves parity with Gemini on strict date exact-match, whereas the Ollama 8B baseline attains modest strict-date performance (23.61\%) and moderate time accuracy (39.58\%). Several smaller candidates fail to produce consistent temporal bounds, suggesting a capacity threshold for dependable structured temporal grounding under CPU-constrained execution.
 
@@ -218,13 +216,13 @@ The local decoder-only candidates span the sub-1B region: \texttt{Qwen2.5-0.5B-I
 
 \subsection{Benchmark Design}
 
-The temporal correctness suite evaluates all seven models on 72 labeled temporal queries from the Curia event corpus. Each query has a natural-language string, labeled keywords, expected temporal bounds (date and time fields), and one or more relevant event URLs. A secondary robustness dataset exists but is excluded from the primary analysis in this paper to focus depth on temporal grounding.
+We evaluate the same seven-model matrix on two 72-case correctness datasets: \texttt{rigorous-temporal} and \texttt{rigorous-robustness}. The temporal set emphasizes explicit temporal grounding, while the robustness set introduces perturbed/edge query forms. Both runs use the same prompt contract, decoding settings, and CUDA local backend configuration where applicable.
 
-A broader \texttt{all-events} preset covering the full event catalog was available but exceeds 10 hours on consumer machines; we prioritize reproducibility and iteration speed within the temporal 72-query benchmark. All models receive the same structured prompt template with 4 temporal exemplars and 3 keyword exemplars, evaluated on the CUDA local backend for consistent hardware-independent latency comparison.
+All numeric values in this section are taken directly from the synced artifacts under \texttt{figures/correctness/temporal/data/} and \texttt{figures/correctness/robustness/data/} (\texttt{summary.json} and \texttt{gate\_results.json}). Figures referenced below come from the corresponding temporal and robustness figure folders.
 
 \subsection{Accuracy on the Temporal Dataset}
 
-Table~\ref{table:temporal_accuracy} reports the canonical extraction metrics computed from the benchmark run artifacts. Parse success is the fraction of queries returning valid JSON. Date and time exact-match rates indicate strict matches against labeled temporal bounds; keyword F1 reports overlap between predicted and labeled keywords. All values are aggregated over the 72-query temporal benchmark and summarized from the run `summary.json`.
+Table~\ref{table:temporal_accuracy} reports the canonical extraction metrics computed from the benchmark run artifacts. Parse success is the fraction of queries returning valid JSON. Date and time exact-match rates indicate strict matches against labeled temporal bounds; keyword F1 reports overlap between predicted and labeled keywords. All values are aggregated over the 72-query temporal benchmark and summarized from the run \texttt{summary.json}.
 
 \begin{table*}[t]
     \centering
@@ -247,69 +245,106 @@ Table~\ref{table:temporal_accuracy} reports the canonical extraction metrics com
 
 The remote Gemini reference achieves perfect extraction rates on this benchmark (100\% parse, date, and time exact-match) under the structured prompt contract used for the run. Among local candidates, the picture is heterogeneous: the Ollama 8B model parses every query but attains only 23.6\% strict date exact-match and 39.6\% time exact-match, while achieving a relatively high keyword F1 (0.225). The Qwen 1.5B run attains full date exact-match parity with Gemini and near-parity on time exact-match (93.75\%), at a lower mean latency than Gemini. Several smaller models (the two T5 variants at ~250\,M) produce no correct temporal fields on this suite despite non-trivial parse success.
 
-\subsection{Parse Success and Semantic Failures}
+\subsection{Accuracy on the Robustness Dataset}
 
-Parse success across models reveals two dominant failure modes. Most candidates comply with the output schema (parse success $\geq$86\%), but syntactically valid JSON often contains semantically incorrect or empty temporal fields. In other words, schema-following does not guarantee correct grounding.
+Table~\ref{table:robustness_accuracy} summarizes the same metrics on \texttt{rigorous-robustness}. This dataset has 48 date-labeled cases and 24 time-labeled cases in the run metadata. We report time \emph{partial} rate here because it is the criterion used by the correctness gates.
 
-Concretely, the Gemini reference returns correct temporal values across the suite, while the T5-family runs produce structurally valid outputs with empty temporal fields (date/time exact rates of 0\%). The Ollama 8B baseline parses every query but attains only modest strict-date (23.61\%) and time (39.58\%) exact-match rates, indicating that it reliably follows the schema but frequently fails on the underlying temporal reasoning.
+\begin{table*}[t]
+    \centering
+    \caption{Robustness Correctness Suite: Extraction Accuracy (72 queries, robustness dataset)}
+    \begin{tabular}{lcccccr}
+        \toprule
+        \textbf{Model} & \textbf{Params} & \textbf{Parse} & \textbf{Date Exact} & \textbf{Time Partial} & \textbf{KW F1} & \textbf{Mean Latency (ms)} \\
+        \midrule
+        \texttt{gemma-3-27b-it} (Gemini)    & 27B   & 25.00\% & 25.00\% & 25.00\% & 0.0134 & 2{,}349 \\
+        \texttt{llama3:latest} (Ollama)     & 8B    & 100\%   & 41.67\% & 54.17\% & 0.290  & 3{,}524 \\
+        \texttt{Qwen/Qwen2.5-1.5B}          & 1.5B  & 100\%   & 100\%   & 91.67\% & 0.0980 & 2{,}768 \\
+        \texttt{TinyLlama-1.1B-Chat}        & 1.1B  & 100\%   & 100\%   & 95.83\% & 0.0478 & 1{,}412 \\
+        \texttt{Qwen/Qwen2.5-0.5B}          & 500M  & 100\%   & 97.92\% & 62.50\% & 0.0507 & 1{,}932 \\
+        \texttt{google/flan-t5-base}        & 250M  & 93.06\% & 0\%     & 0\%     & 0.000  & 858   \\
+        \texttt{MBZUAI/LaMini-248M}         & 248M  & 98.61\% & 0\%     & 0\%     & 0.000  & 991   \\
+        \bottomrule
+    \end{tabular}
+    \label{table:robustness_accuracy}
+\end{table*}
 
-\subsection{Latency and Deployment Implications}
+Relative to temporal, robustness exposes sharper degradation in temporal grounding and stronger backend sensitivity in this specific run. Notably, Gemini drops to 25\% parse success and 75\% error rate on this robustness execution, while Qwen 1.5B and Qwen 0.5B remain gate-passing under the correctness profile.
 
-Inference latency (mean) ranges from about 844\,ms for the fastest encoder-decoder runs to roughly 8,375\,ms for the Gemini remote reference. The fastest models (\texttt{flan-t5-base}, LaMini) have mean latencies around 844--853\,ms but produce no correct temporal fields on this suite, making them useful speed baselines rather than functional grounders. Among temporally-accurate candidates, Qwen 1.5B offers a favorable latency (mean ~2,896\,ms) while matching Gemini on strict date exact-match; Gemini provides the highest accuracy at substantially higher latency (mean ~8,375\,ms). Ollama 8B sits between these extremes (mean ~3,580\,ms) with modest strict-date performance.
+\subsection{Research Questions (RQ1--RQ4)}
 
-\subsection{Key Extraction Patterns: Keywords vs.\ Temporal}
+\subsubsection{RQ1: Do temporal grounding and keyword expansion diverge as size decreases?}
 
-Figure~\ref{fig:jaccard} shows date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini per model. Qwen 1.5B nearly matches Gemini at 66/72 (91.7\%); TinyLlama reaches 38/72 (53\%); Qwen 0.5B and Ollama llama3 fall to 14/72 (19\%) and 7/72 (10\%) respectively; T5 models score 2/72. Figure~\ref{fig:temporal} shows keyword search quality (mean result overlap, top-10) relative to Gemini, restricted to date-correct queries. All models achieve full overlap on date-correct queries, indicating that keyword extraction quality is not the differentiating factor --- the bottleneck is temporal grounding.
+\textbf{Determination: Yes, and the divergence is visible in both datasets.}
+
+On \texttt{rigorous-temporal}, Ollama 8B attains the highest keyword F1 (0.225) but low strict temporal rates (23.61\% date exact, 39.58\% time exact), while Qwen 1.5B has much lower keyword F1 (0.0626) yet near-perfect temporal grounding (100\% date exact, 93.75\% time exact). On \texttt{rigorous-robustness}, the same pattern persists: Ollama again leads keyword F1 (0.290) but remains weaker in temporal grounding (41.67\% date exact, 54.17\% time partial) than Qwen 1.5B (100\% date exact, 91.67\% time partial). This indicates the two tasks do not degrade together under downscaling.
+
+\subsubsection{RQ2: At what point does the structured prompt stop producing usable results?}
+
+\textbf{Determination: Around the 250M class for both datasets, with additional robustness-specific failures in larger models.}
+
+Using the correctness gates from \texttt{gate\_results.json}, temporal passes 4/7 models (Gemini, Qwen 1.5B, TinyLlama 1.1B, Qwen 0.5B), while robustness passes 2/7 (Qwen 1.5B and Qwen 0.5B). Both T5-family models (250M and 248M) fail both datasets with 0\% date exact, 0\% time performance, and 0 keyword F1, indicating non-usable extraction despite mostly parseable output. In robustness, Gemini also fails this run (25\% parse success), showing that usability depends on both model capacity and endpoint reliability under perturbation.
+
+\subsubsection{RQ3: How stable are results as size decreases?}
+
+\textbf{Determination: Stability varies by model family; lower size does not monotonically imply lower stability, but variance spikes appear in selected small models.}
+
+Each dataset here uses one run per query (run count = 1), so inter-run standard deviation is unavailable; we therefore use latency spread and error rates as a stability proxy. On temporal, Qwen 0.5B shows high tail latency (p50 = 2,277 ms, p95 = 16,187 ms, max = 35,293 ms), and TinyLlama shows occasional spikes (max = 27,807 ms) despite low p50. On robustness, Qwen 1.5B and Qwen 0.5B have tighter tails (p95 = 3,376 ms and 2,724 ms respectively), while Gemini exhibits instability in correctness itself (75\% error rate in this run). Thus, stability changes with model/back-end interaction rather than parameter count alone.
+
+\subsubsection{RQ4: What model size offers the best tradeoff among stability, accuracy, and latency?}
+
+\textbf{Determination: Qwen 1.5B is the strongest overall balanced point across both datasets; Qwen 0.5B is a latency-oriented fallback with reduced robustness margin.}
+
+Qwen 1.5B combines high extraction quality on temporal (100\% date exact, 93.75\% time exact) and robustness (100\% date exact, 91.67\% time partial) with moderate latency (2,896 ms temporal mean; 2,768 ms robustness mean). Qwen 0.5B is faster on robustness (1,932 ms mean) and still gate-passing, but has lower temporal reliability (81.94\% date exact and 54.17\% time exact on temporal). Ollama 8B offers strong keyword F1 but does not clear date exact gates in either dataset.
+
+\subsection{Figure Cross-Checks}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig1_jaccard.png}
-    \caption{Date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini. Qwen 1.5B nearly matches Gemini (66/72); TinyLlama reaches 53\%; Qwen 0.5B and Ollama llama3 fall to 19\% and 10\%; T5 models score near zero.}
+    \caption{Temporal-suite extraction correctness visualization from \texttt{figures/correctness/temporal/fig1\_jaccard.png}. The plotted ordering and relative separations align with Table~\ref{table:temporal_accuracy}: Gemini and Qwen 1.5B lead; T5-family models remain near zero.}
     \label{fig:jaccard}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig2_temporal.png}
-    \caption{Keyword search quality (mean result overlap, top-10) relative to Gemini baseline, restricted to date-correct queries only (events corpus unavailable for full evaluation). All models achieve full parity with Gemini on date-correct queries.}
+    \caption{Temporal-suite keyword-overlap visualization from \texttt{figures/correctness/temporal/fig2\_temporal.png}. This chart uses the date-correct subset and should be interpreted jointly with keyword F1 in Table~\ref{table:temporal_accuracy}.}
     \label{fig:temporal}
 \end{figure}
-
-\subsection{Speed-Accuracy Frontier}
-
-Figure~\ref{fig:quality_vs_speed} plots result overlap vs.\ Gemini (left axis) alongside p50 latency in seconds (right axis), with models sorted by quality. Gemini leads at 1.00 quality and 8.3\,s. Among local models, Qwen 1.5B is the strongest candidate at 0.97 quality and 5.7\,s; TinyLlama offers a favorable tradeoff at 0.83 quality and 2.5\,s. Qwen 0.5B achieves 0.82 quality at 3.6\,s --- comparable quality to TinyLlama but slower. Ollama llama3 lags sharply at 0.26 quality despite a similar 3.6\,s latency. T5 models are fastest (0.8\,s) but near-zero in quality (0.03).
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig4_quality_vs_speed.png}
-    \caption{Quality-latency tradeoff across models. Bars show result overlap vs.\ Gemini (left axis); line shows p50 latency in seconds (right axis). Qwen 1.5B is the best local model at 0.97 quality and 5.7\,s; TinyLlama offers 0.83 quality at 2.5\,s; Ollama llama3 lags at 0.26 quality despite similar latency.}
+    \caption{Temporal-suite quality-vs-speed plot from \texttt{figures/correctness/temporal/fig4\_quality\_vs\_speed.png}. Relative ranking is consistent with Table~\ref{table:temporal_accuracy}: Qwen 1.5B is the strongest local balance, while T5-family runs are fast but non-functional for temporal grounding.}
     \label{fig:quality_vs_speed}
 \end{figure}
 
-\subsection{Key Findings}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\columnwidth]{../figures/correctness/robustness/fig1_jaccard.png}
+    \caption{Robustness-suite extraction correctness visualization from \texttt{figures/correctness/robustness/fig1\_jaccard.png}. The degradation pattern matches Table~\ref{table:robustness_accuracy}, including the non-usable T5-family outputs and stronger mid-scale local models.}
+    \label{fig:robust_jaccard}
+\end{figure}
 
-\begin{enumerate}
-    \item \textbf{Ollama 8B is a practical local candidate}: It parses all queries (100\%) and offers moderate keyword quality (KW F1 = 0.225) at a mean latency of ~3,580\,ms, but strict date exact-match is limited (23.61\%). This makes it a low-effort, moderate-accuracy option for deployments prioritizing latency and schema compliance.
-
-    \item \textbf{Qwen 1.5B hits a favorable accuracy-latency point}: The 1.5B run matches Gemini on strict date exact-match (100\%) and achieves 93.75\% time exact-match with a mean latency of ~2,896\,ms, suggesting that the 1.5B scale is sufficient for reliable temporal grounding in this task when latency budgets permit.
-
-    \item \textbf{Sub-1B behavior is heterogeneous}: Some smaller decoder-only models (e.g., TinyLlama 1.1B and Qwen 0.5B) report high date exact rates (98.6\% and 81.9\% respectively), while the T5-family encoder-decoder runs (\texttt{flan-t5-base}, LaMini) return structurally valid outputs but no correct temporal fields. This indicates that architecture and instruction tuning interact with scale in non-trivial ways for temporal grounding.
-
-    \item \textbf{Keyword vs temporal trade-off}: Keyword F1 does not map directly to temporal grounding. Gemini's keyword F1 on this suite is 0.065 while several local models produce higher keyword F1 (e.g., Ollama 8B = 0.225), reflecting differing precision/recall trade-offs in keyword generation. Systems designers should therefore evaluate keyword and temporal metrics separately when balancing features.
-\end{enumerate}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\columnwidth]{../figures/correctness/robustness/fig4_quality_vs_speed.png}
+    \caption{Robustness-suite quality-vs-speed plot from \texttt{figures/correctness/robustness/fig4\_quality\_vs\_speed.png}. The local trade-off frontier is led by Qwen 1.5B and Qwen 0.5B, consistent with robustness gate outcomes.}
+    \label{fig:robust_quality_vs_speed}
+\end{figure}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We present Curia-Lite, an efficiency study on model-size minimization for event query grounding. Our results confirm asymmetric degradation: under a consistent in-context learning protocol and fallback policy, keyword expansion retains partial function at 500M parameters while temporal structured output is essentially zero below the 27B scale on consumer CPU. A sub-1B structured-output ceiling is real and does not appear bridgeable by prompt engineering alone without quantization or GPU inference.
+We present Curia-Lite, an efficiency study on model-size minimization for event query grounding. Across temporal and robustness suites, results confirm asymmetric degradation between keyword expansion and temporal grounding, plus meaningful backend sensitivity under perturbed queries. The best cross-suite local balance in our runs is Qwen 1.5B, while Qwen 0.5B remains a latency-oriented alternative that still passes robustness correctness gates.
 
 Key findings:
 \begin{itemize}
-    \item \textbf{Latency-accuracy trade-offs are model-specific}: The 1.5B run is a useful middle ground (high temporal accuracy, moderate latency), Gemini remains the most accurate at higher latency, and several small encoder-decoder runs are fast but non-functional for temporal grounding.
-    \item \textbf{No single metric suffices}: Keyword F1 and strict temporal exact-match capture different failure modes; both should guide deployment choices.
-    \item \textbf{Architecture matters within scale bands}: Decoder-only and encoder-decoder families show divergent behaviors at similar parameter counts, so architecture selection should be considered alongside parameter budget.
-    \item \textbf{Hybrid retrieval remains valuable}: A compact retrieval model (e.g., all-MiniLM-L6-v2) effectively augments keyword coverage with minimal latency cost and can partially mitigate weak keyword lists from smaller grounders.
-    \item \textbf{Fallbacks have limited reach}: Rule-based fallbacks recover explicit dates but do not solve compound or relative temporal reasoning errors produced by the models.
+    \item \textbf{Task divergence is consistent}: Higher keyword F1 does not imply stronger temporal grounding; the two capabilities must be evaluated separately.
+    \item \textbf{Usability threshold is dataset-dependent}: The 250M-class T5-family runs are non-usable on both suites, while robustness further narrows gate-passing models.
+    \item \textbf{Stability is not purely a size effect}: Tail latency and error behavior vary by model/back-end pair; selected smaller models show heavy p95/max spikes.
+    \item \textbf{Best practical operating point}: Qwen 1.5B provides the strongest cross-suite balance of correctness and latency, with Qwen 0.5B as a faster but lower-margin option.
+    \item \textbf{Fallbacks remain limited}: Rule-based fallbacks recover explicit strings but do not fix semantically incorrect temporal reasoning in otherwise parseable JSON.
 \end{itemize}
 
 \subsection{Future Work}
