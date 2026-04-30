@@ -14,21 +14,21 @@
         },
         {
           "name": "keyword_f1",
-          "actual": 0.21926464186403352,
+          "actual": 0.2895744060997535,
           "expected": 0.05,
           "comparator": ">=",
           "passed": true
         },
         {
           "name": "date_exact_rate",
-          "actual": 0.19444444444444445,
+          "actual": 0.4166666666666667,
           "expected": 0.5,
           "comparator": ">=",
           "passed": false
         },
         {
           "name": "time_partial_rate",
-          "actual": 1.0,
+          "actual": 0.5416666666666666,
           "expected": 0.5,
           "comparator": ">=",
           "passed": true
@@ -37,35 +37,35 @@
     },
     {
       "model_key": "gemini:gemma-3-27b-it",
-      "passed": true,
+      "passed": false,
       "checks": [
         {
           "name": "parse_success_rate",
-          "actual": 0.9861111111111112,
+          "actual": 0.25,
           "expected": 0.7,
           "comparator": ">=",
-          "passed": true
+          "passed": false
         },
         {
           "name": "keyword_f1",
-          "actual": 0.06532188558300599,
+          "actual": 0.013416132376890787,
           "expected": 0.05,
           "comparator": ">=",
-          "passed": true
+          "passed": false
         },
         {
           "name": "date_exact_rate",
-          "actual": 0.9861111111111112,
+          "actual": 0.25,
           "expected": 0.5,
           "comparator": ">=",
-          "passed": true
+          "passed": false
         },
         {
           "name": "time_partial_rate",
-          "actual": 0.9791666666666666,
+          "actual": 0.25,
           "expected": 0.5,
           "comparator": ">=",
-          "passed": true
+          "passed": false
         }
       ]
     },
@@ -82,10 +82,44 @@
         },
         {
           "name": "keyword_f1",
-          "actual": 0.06024029982363316,
+          "actual": 0.09798881673881674,
           "expected": 0.05,
           "comparator": ">=",
           "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 1.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.9166666666666666,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "passed": false,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 1.0,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.047784391534391533,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": false
         },
         {
           "name": "date_exact_rate",
@@ -104,67 +138,33 @@
       ]
     },
     {
-      "model_key": "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-      "passed": true,
-      "checks": [
-        {
-          "name": "parse_success_rate",
-          "actual": 0.9861111111111112,
-          "expected": 0.7,
-          "comparator": ">=",
-          "passed": true
-        },
-        {
-          "name": "keyword_f1",
-          "actual": 0.17019400352733685,
-          "expected": 0.05,
-          "comparator": ">=",
-          "passed": true
-        },
-        {
-          "name": "date_exact_rate",
-          "actual": 0.9861111111111112,
-          "expected": 0.5,
-          "comparator": ">=",
-          "passed": true
-        },
-        {
-          "name": "time_partial_rate",
-          "actual": 0.6875,
-          "expected": 0.5,
-          "comparator": ">=",
-          "passed": true
-        }
-      ]
-    },
-    {
       "model_key": "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
       "passed": true,
       "checks": [
         {
           "name": "parse_success_rate",
-          "actual": 0.9583333333333334,
+          "actual": 1.0,
           "expected": 0.7,
           "comparator": ">=",
           "passed": true
         },
         {
           "name": "keyword_f1",
-          "actual": 0.09696168029501363,
+          "actual": 0.05073514448514449,
           "expected": 0.05,
           "comparator": ">=",
           "passed": true
         },
         {
           "name": "date_exact_rate",
-          "actual": 0.8333333333333334,
+          "actual": 0.9791666666666666,
           "expected": 0.5,
           "comparator": ">=",
           "passed": true
         },
         {
           "name": "time_partial_rate",
-          "actual": 0.8541666666666666,
+          "actual": 0.625,
           "expected": 0.5,
           "comparator": ">=",
           "passed": true
@@ -177,7 +177,7 @@
       "checks": [
         {
           "name": "parse_success_rate",
-          "actual": 0.8611111111111112,
+          "actual": 0.9305555555555556,
           "expected": 0.7,
           "comparator": ">=",
           "passed": true
