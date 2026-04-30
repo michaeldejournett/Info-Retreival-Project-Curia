@@ -1,0 +1,243 @@
+{
+  "gate_profile": "correctness",
+  "model_results": [
+    {
+      "model_key": "ollama:llama3:latest",
+      "passed": false,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 1.0,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.22541179372385745,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 0.2361111111111111,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": false
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 1.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "gemini:gemma-3-27b-it",
+      "passed": true,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 1.0,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.06528034404772563,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 1.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 1.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:Qwen/Qwen2.5-1.5B-Instruct",
+      "passed": true,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 1.0,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.06255511463844797,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 1.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.9583333333333334,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "passed": true,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 0.9861111111111112,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.16672178130511464,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 0.9861111111111112,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.6875,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:Qwen/Qwen2.5-0.5B-Instruct",
+      "passed": true,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 0.9444444444444444,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.09835958794292128,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 0.8194444444444444,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.8125,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:google/flan-t5-base",
+      "passed": false,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 0.8611111111111112,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.0,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": false
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 0.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": false
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "model_key": "huggingface:MBZUAI/LaMini-Flan-T5-248M",
+      "passed": false,
+      "checks": [
+        {
+          "name": "parse_success_rate",
+          "actual": 0.9861111111111112,
+          "expected": 0.7,
+          "comparator": ">=",
+          "passed": true
+        },
+        {
+          "name": "keyword_f1",
+          "actual": 0.0,
+          "expected": 0.05,
+          "comparator": ">=",
+          "passed": false
+        },
+        {
+          "name": "date_exact_rate",
+          "actual": 0.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": false
+        },
+        {
+          "name": "time_partial_rate",
+          "actual": 0.0,
+          "expected": 0.5,
+          "comparator": ">=",
+          "passed": false
+        }
+      ]
+    }
+  ]
+}
