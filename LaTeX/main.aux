@@ -1,0 +1,67 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{kaplan2020scaling,hoffmann2022training}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{Introduction}{section.1}{}}
+\citation{kaplan2020scaling}
+\citation{hoffmann2022training}
+\citation{strotgen2010heideltime}
+\citation{reimers2019sentencebert}
+\citation{brown2020language}
+\citation{grangier2024small}
+\citation{belcak2025slm}
+\citation{fan2025smallmighty}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{2}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Neural Scaling Laws}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Temporal Extraction and Hybrid Retrieval}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Few-Shot and In-Context Learning}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Small and Specialized Language Models}{2}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Methodology}{2}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{III}{2}{Methodology}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Evaluation Design}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Task Outputs}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Scoring Framework}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Inference Paths}{3}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0a}Gemini Remote Path (27B baseline)}{3}{paragraph.3.4.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0b}Local Model Path}{3}{paragraph.3.4.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-D}0c}Fallback Layer}{3}{paragraph.3.4.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Event Scoring}{3}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Models Evaluated}{3}{subsection.3.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Model Candidates}}{3}{table.1}\protected@file@percent }
+\newlabel{table:models}{{I}{3}{Model Candidates}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Model Selection Rationale}{3}{subsection.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Results}{4}{section.4}\protected@file@percent }
+\newlabel{sec:results}{{IV}{4}{Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Benchmark Design}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Accuracy on the Temporal Dataset}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Parse Success and Semantic Failures}{4}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Latency and Deployment Implications}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Key Extraction Patterns: Keywords vs.\ Temporal}{4}{subsection.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini. Qwen 1.5B nearly matches Gemini (66/72); TinyLlama reaches 53\%; Qwen 0.5B and Ollama llama3 fall to 19\% and 10\%; T5 models score near zero.}}{4}{figure.1}\protected@file@percent }
+\newlabel{fig:jaccard}{{1}{4}{Date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini. Qwen 1.5B nearly matches Gemini (66/72); TinyLlama reaches 53\%; Qwen 0.5B and Ollama llama3 fall to 19\% and 10\%; T5 models score near zero}{figure.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Keyword search quality (mean result overlap, top-10) relative to Gemini baseline, restricted to date-correct queries only (events corpus unavailable for full evaluation). All models achieve full parity with Gemini on date-correct queries.}}{4}{figure.2}\protected@file@percent }
+\newlabel{fig:temporal}{{2}{4}{Keyword search quality (mean result overlap, top-10) relative to Gemini baseline, restricted to date-correct queries only (events corpus unavailable for full evaluation). All models achieve full parity with Gemini on date-correct queries}{figure.2}{}}
+\bibstyle{IEEEtran}
+\bibdata{references}
+\bibcite{kaplan2020scaling}{1}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Temporal Correctness Suite: Extraction Accuracy (72 queries, temporal dataset)}}{5}{table.2}\protected@file@percent }
+\newlabel{table:temporal_accuracy}{{II}{5}{Temporal Correctness Suite: Extraction Accuracy (72 queries, temporal dataset)}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Speed-Accuracy Frontier}{5}{subsection.4.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Quality-latency tradeoff across models. Bars show result overlap vs.\ Gemini (left axis); line shows p50 latency in seconds (right axis). Qwen 1.5B is the best local model at 0.97 quality and 5.7\,s; TinyLlama offers 0.83 quality at 2.5\,s; Ollama llama3 lags at 0.26 quality despite similar latency.}}{5}{figure.3}\protected@file@percent }
+\newlabel{fig:quality_vs_speed}{{3}{5}{Quality-latency tradeoff across models. Bars show result overlap vs.\ Gemini (left axis); line shows p50 latency in seconds (right axis). Qwen 1.5B is the best local model at 0.97 quality and 5.7\,s; TinyLlama offers 0.83 quality at 2.5\,s; Ollama llama3 lags at 0.26 quality despite similar latency}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Key Findings}{5}{subsection.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Conclusion}{5}{section.5}\protected@file@percent }
+\newlabel{sec:conclusion}{{V}{5}{Conclusion}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Future Work}{5}{subsection.5.1}\protected@file@percent }
+\bibcite{hoffmann2022training}{2}
+\bibcite{strotgen2010heideltime}{3}
+\bibcite{reimers2019sentencebert}{4}
+\bibcite{brown2020language}{5}
+\bibcite{grangier2024small}{6}
+\bibcite{belcak2025slm}{7}
+\bibcite{fan2025smallmighty}{8}
+\@writefile{toc}{\contentsline {section}{References}{6}{section*.1}\protected@file@percent }
+\gdef \@abspage@last{6}

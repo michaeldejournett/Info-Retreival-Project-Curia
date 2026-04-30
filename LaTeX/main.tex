@@ -168,16 +168,12 @@ Positive $D_{\mathrm{perf}}(s)$ means keyword expansion is retained better than 
 The reference path sends a single structured prompt to \texttt{gemma-3-27b-it} via the \texttt{google-genai} SDK. The prompt includes the current date and requests a JSON object containing temporal fields, keyword expansion, and retrieval-oriented output. This path serves as the $s_{\max}$ reference for divergence normalization and for the quality-versus-latency comparisons reported in the evaluation.
 
 \paragraph{Local Model Path}
-The local candidates execute through the Hugging Face backend on CPU by default, with optional device overrides for CUDA or other supported runtimes. Each local model is evaluated with the same structured prompt contract, the same top-level output schema, and the same decoding settings so that differences in output quality are attributable to model capacity rather than prompt redesign. The benchmark runner preserves a fixed prompt interface across all local candidates; the only variation is the model identity and the execution backend.
+The local HuggingFace candidates execute with automatic device selection: CUDA when available, falling back to CPU otherwise. The Ollama baseline (llama3:latest) runs through Ollama's local inference server. Each model is evaluated with the same structured prompt contract, the same top-level output schema, and the same decoding settings so that differences in output quality are attributable to model capacity rather than prompt redesign. The benchmark runner preserves a fixed prompt interface across all local candidates; the only variation is the model identity and the execution backend.
 
-For the latency-stability suite, the runner repeats each query three times and summarizes within-model variability using the standard deviation of parse success, keyword F1, and latency p95 across repeated runs. This separates sensitivity to model size from run-to-run jitter and allows the paper to report stability as a first-class property rather than an anecdotal observation.
+\paragraph{Fallback Layer}
+For malformed JSON outputs, the benchmark applies a fallback policy: (1) attempt \texttt{dateparser} to recover parseable date strings when JSON parsing fails; (2) time-of-day keyword lookup for time fields (morning $\to$ 06:00--12:00, afternoon $\to$ 12:00--17:00, evening $\to$ 17:00--21:00); (3) null bounds if both fail. This recovery layer applies uniformly across all models, allowing divergence in performance to be attributed to model capacity. However, the fallback only recovers from malformed JSON; when a model returns valid JSON with incorrect temporal values (e.g., wrong date arithmetic), the fallback does not intervene, and the error is recorded as-is in the results.
 
-\paragraph{Controlled Fallback Layer}
-The benchmark records model outputs before aggregation and does not require per-model recovery heuristics to pass a gate. For malformed or incomplete outputs, the evaluator treats parse failure, missing temporal fields, and empty keyword lists as part of the observed model behavior. This keeps the measured outcomes aligned with the actual benchmark artifacts and prevents hidden post-processing from masking failures in the reported metrics.
-
-\subsection{MiniLM Hybrid Retrieval}
-
-\texttt{all-MiniLM-L6-v2} (22M parameters) is used as a retrieval augmentation component in the Curia system, but it is not part of the fixed benchmark matrix. Its role is to broaden keyword coverage in the deployed pipeline; the benchmark itself reports the behavior of the language-model candidates under a common evaluation harness, with retrieval treated as downstream infrastructure.
+% MiniLM subsection removed; model not part of evaluated matrix
 
 \subsection{Event Scoring}
 
@@ -189,7 +185,7 @@ where $w_f \in \{4, 2, 1\}$ for name, venue/category, and description/tags respe
 
 \subsection{Models Evaluated}
 
-Table~\ref{table:models} lists the model matrix used by the benchmark harness. The local and remote language-model candidates are evaluated directly, while \texttt{all-MiniLM-L6-v2} remains a supporting retrieval module rather than a standalone benchmarked grounder.
+Table~\ref{table:models} lists the seven model candidates evaluated in the benchmark harness.
 
 \begin{table}[ht]
     \centering
@@ -206,8 +202,6 @@ Table~\ref{table:models} lists the model matrix used by the benchmark harness. T
         \texttt{TinyLlama-1.1B-Chat-v1.0} & HF local & 1.1B \\
         \texttt{google/flan-t5-base} & HF local & 250M \\
         \texttt{LaMini-Flan-T5-248M} & HF local & 248M \\
-        \midrule
-        \texttt{all-MiniLM-L6-v2} & HF local (retrieval) & 22M \\
         \bottomrule
     \end{tabular}}
     \label{table:models}
@@ -218,8 +212,6 @@ Table~\ref{table:models} lists the model matrix used by the benchmark harness. T
 The benchmark model set was selected to probe the parameter-performance frontier at key intervals and to include both instruction-tuned decoder-only and encoder-decoder architectures. \texttt{gemma-3-27b-it} serves as the remote reference model---a production-grade instruction-tuned 27B decoder-only model via the Gemini API that reliably solves both tasks. \texttt{llama3:latest} (8B) is included as a local baseline available via Ollama, bridging between the Gemini scale and smaller local candidates while remaining practical for CPU inference.
 
 The local decoder-only candidates span the sub-1B region: \texttt{Qwen2.5-0.5B-Instruct} (500M, instruction-tuned, chat-templated) is the active default in production due to its speed and performance for lower range consumer machines; \texttt{Qwen2.5-1.5B-Instruct} (1.5B, same architecture) was included to test whether crossing into the 1B range improves temporal reasoning at the cost of latency; and \texttt{TinyLlama-1.1B-Chat-v1.0} (1.1B, a multi-turn chat-optimized model) was included to evaluate whether alternative chat architectures in the 1B range escape the structured-output ceiling. The encoder-decoder candidates are smaller T5 variants: \texttt{flan-t5-base} (250M, instruction-tuned via FLAN) and \texttt{LaMini-Flan-T5-248M} (248M, a distilled T5 trained for abstractive tasks). These were included to determine whether the seq2seq inductive bias offers advantages over decoder-only scaling for this task.
-
-\texttt{all-MiniLM-L6-v2} (22M, a Sentence-BERT model) is evaluated not as a standalone grounder but as a retrieval augmentation component, deployed to broaden keyword coverage when embedded within the Curia pipeline. The model set thus captures both the architectural diversity of contemporary language models and the parameter-dependent performance cliffs that emerge under strict output constraints.
 
 \section{Results}
 \label{sec:results}
@@ -267,49 +259,31 @@ Inference latency (mean) ranges from about 844\,ms for the fastest encoder-decod
 
 \subsection{Key Extraction Patterns: Keywords vs.\ Temporal}
 
-Figure~\ref{fig:jaccard} shows keyword overlap (Jaccard similarity) per model. Raw keyword F1 varies across models: Gemini's keyword F1 on this suite is 0.065, while several local candidates (for example Ollama 8B at 0.225) report higher keyword F1 despite lower strict temporal accuracy. This reflects differing precision/recall trade-offs in keyword generation: some models produce broader keyword lists that increase overlap with labeled terms (boosting recall and F1) even when their temporal grounding is weak. Figure~\ref{fig:temporal} plots date and time exact-match across models, confirming that strict time-of-day extraction is more sensitive to model scale than date boundary extraction (Qwen 1.5B: 100\% date vs. 93.75\% time; Ollama 8B: 23.61\% date vs. 39.58\% time).
+Figure~\ref{fig:jaccard} shows date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini per model. Qwen 1.5B nearly matches Gemini at 66/72 (91.7\%); TinyLlama reaches 38/72 (53\%); Qwen 0.5B and Ollama llama3 fall to 14/72 (19\%) and 7/72 (10\%) respectively; T5 models score 2/72. Figure~\ref{fig:temporal} shows keyword search quality (mean result overlap, top-10) relative to Gemini, restricted to date-correct queries. All models achieve full overlap on date-correct queries, indicating that keyword extraction quality is not the differentiating factor --- the bottleneck is temporal grounding.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig1_jaccard.png}
-    \caption{Keyword retention relative to Gemini baseline. Ollama 8B retains 37\%; Qwen 0.5B retains 2\%; T5 models converge to zero. Keyword expansion is more robust to model size reduction than temporal extraction.}
+    \caption{Date/time extraction accuracy (fraction of 72 queries correct) relative to Gemini. Qwen 1.5B nearly matches Gemini (66/72); TinyLlama reaches 53\%; Qwen 0.5B and Ollama llama3 fall to 19\% and 10\%; T5 models score near zero.}
     \label{fig:jaccard}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig2_temporal.png}
-    \caption{Temporal accuracy by model: date and time exact-match rates on the 72-query temporal benchmark. Time-of-day extraction shows sharper accuracy decline than date boundaries below 1B parameters.}
+    \caption{Keyword search quality (mean result overlap, top-10) relative to Gemini baseline, restricted to date-correct queries only (events corpus unavailable for full evaluation). All models achieve full parity with Gemini on date-correct queries.}
     \label{fig:temporal}
 \end{figure}
 
 \subsection{Speed-Accuracy Frontier}
 
-Figure~\ref{fig:latency_quality} summarizes the latency and quality trade-offs across models. To make relative comparisons easier for the reader, we present p50 latency (left) and keyword F1 vs latency (right) side-by-side: the left panel shows a horizontal latency bar chart, and the right panel visualizes the quality-vs-speed frontier as a scatter plot.
-
-\begin{figure*}[ht]
-    \centering
-    \begin{minipage}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{../figures/correctness/temporal/fig3_latency.png}
-    \end{minipage}\hfill
-    \begin{minipage}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{../figures/correctness/temporal/fig4_quality_vs_speed.png}
-    \end{minipage}
-    \caption{Left: Query latency comparison (p50) across models. Right: Quality (keyword Jaccard) vs latency trade-off, showing the non-dominated frontier. Gemini dominates quality; Ollama 8B is the best local compromise.}
-    \label{fig:latency_quality}
-\end{figure*}
-
-\subsection{Per-query Variation}
-
-Figure~\ref{fig:per_query} visualizes per-query keyword Jaccard across models as a heatmap (average overlap per query across runs). This highlights which queries drive variance and where individual models fail systematically.
+Figure~\ref{fig:quality_vs_speed} plots result overlap vs.\ Gemini (left axis) alongside p50 latency in seconds (right axis), with models sorted by quality. Gemini leads at 1.00 quality and 8.3\,s. Among local models, Qwen 1.5B is the strongest candidate at 0.97 quality and 5.7\,s; TinyLlama offers a favorable tradeoff at 0.83 quality and 2.5\,s. Qwen 0.5B achieves 0.82 quality at 3.6\,s --- comparable quality to TinyLlama but slower. Ollama llama3 lags sharply at 0.26 quality despite a similar 3.6\,s latency. T5 models are fastest (0.8\,s) but near-zero in quality (0.03).
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig5_per_query_heatmap.png}
-    \caption{Per-query average keyword overlap vs Gemini baseline. Darker cells indicate higher Jaccard overlap; rows correspond to queries and columns to models (labels omitted for brevity).}
-    \label{fig:per_query}
+    \includegraphics[width=\columnwidth]{../figures/correctness/temporal/fig4_quality_vs_speed.png}
+    \caption{Quality-latency tradeoff across models. Bars show result overlap vs.\ Gemini (left axis); line shows p50 latency in seconds (right axis). Qwen 1.5B is the best local model at 0.97 quality and 5.7\,s; TinyLlama offers 0.83 quality at 2.5\,s; Ollama llama3 lags at 0.26 quality despite similar latency.}
+    \label{fig:quality_vs_speed}
 \end{figure}
 
 \subsection{Key Findings}

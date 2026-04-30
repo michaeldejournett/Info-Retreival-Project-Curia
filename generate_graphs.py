@@ -14,14 +14,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+from matplotlib.patches import Patch
 
 HISTORICAL_DATA = [
-    {"short": "Gemini",     "label": "gemma-3-27b-it",        "params_B": 27.0,  "jaccard": 1.0,  "temporal_n": 8, "temporal_d": 8,  "latency_s": 7.8,   "status": "active"},
-    {"short": "Qwen-0.5B",  "label": "Qwen2.5-0.5B-Instruct", "params_B": 0.5,   "jaccard": 0.00, "temporal_n": None,"temporal_d": 8, "latency_s": 3.2,   "status": "active"},
-    {"short": "Qwen-1.5B",  "label": "Qwen2.5-1.5B-Instruct", "params_B": 1.5,   "jaccard": 0.18, "temporal_n": 3, "temporal_d": 7,  "latency_s": 129.0, "status": "tested"},
-    {"short": "flan-t5",    "label": "flan-t5-base",           "params_B": 0.25,  "jaccard": 0.00, "temporal_n": None,"temporal_d": None,"latency_s": None,"status": "abandoned"},
-    {"short": "t-tagger",   "label": "temporal_tagger",        "params_B": 0.25,  "jaccard": None, "temporal_n": 0, "temporal_d": 8,  "latency_s": None,  "status": "abandoned"},
-    {"short": "MiniLM",     "label": "all-MiniLM-L6-v2",       "params_B": 0.022, "jaccard": None, "temporal_n": None,"temporal_d": None,"latency_s": 0.05,"status": "active"},
+    {"short": "Gemini",     "label": "gemma-3-27b-it",        "params_B": 27.0,  "jaccard": 1.0,  "temporal_n": 72, "temporal_d": 72,  "latency_s": 7.8,   "status": "active"},
+    {"short": "Qwen-0.5B",  "label": "Qwen2.5-0.5B-Instruct", "params_B": 0.5,   "jaccard": 0.71, "temporal_n": 14, "temporal_d": 72, "latency_s": 6.911, "status": "active"},
+    {"short": "Qwen-1.5B",  "label": "Qwen2.5-1.5B-Instruct", "params_B": 1.5,   "jaccard": 0.00, "temporal_n": 0,  "temporal_d": 72,  "latency_s": 23.898, "status": "tested"},
+    {"short": "TinyLlama",  "label": "TinyLlama-1.1B-Chat-v1.0", "params_B": 1.1, "jaccard": 0.00, "temporal_n": 0, "temporal_d": 72, "latency_s": 12.643, "status": "abandoned"},
+    {"short": "flan-t5",    "label": "google/flan-t5-base",   "params_B": 0.25,  "jaccard": 0.00, "temporal_n": 0,  "temporal_d": 72, "latency_s": 0.402,"status": "abandoned"},
+    {"short": "LaMini",     "label": "LaMini-Flan-T5-248M",   "params_B": 0.248, "jaccard": 0.00, "temporal_n": 0,  "temporal_d": 72, "latency_s": 1.213, "status": "abandoned"},
 ]
 
 STATUS_COLORS = {"active": "#2ecc71", "tested": "#e67e22", "abandoned": "#95a5a6"}
@@ -44,9 +45,8 @@ def load_run_files(paths):
 def fig1_jaccard_bar(out_dir):
     """Keyword Jaccard bar chart."""
     fig, ax = plt.subplots(figsize=(10, 5))
-
-    models = [m for m in HISTORICAL_DATA if m["jaccard"] is not None]
-    labels = [m["label"] for m in models]
+    models = [m for m in HISTORICAL_DATA if m.get("jaccard") is not None]
+    labels = [m["short"] for m in models]
     values = [m["jaccard"] for m in models]
     colors = [STATUS_COLORS[m["status"]] for m in models]
 
@@ -60,12 +60,15 @@ def fig1_jaccard_bar(out_dir):
         ax.text(bar.get_x() + bar.get_width() / 2, height + 0.02, label_text,
                 ha="center", va="bottom", fontsize=10, fontweight="bold")
 
-    ax.axhline(y=1.0, color="red", linestyle="--", linewidth=2, alpha=0.7, label="Gemini baseline")
+    # no separate baseline line; Gemini included as a bar
     ax.set_xticks(range(len(models)))
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=10, rotation=20)
     ax.set_ylabel("Mean KW Jaccard", fontsize=11, fontweight="bold")
     ax.set_ylim([0, 1.15])
-    ax.legend(loc="upper right", fontsize=10)
+    # Build legend for status colors
+    unique_statuses = list({m['status'] for m in models})
+    legend_handles = [Patch(facecolor=STATUS_COLORS[s], edgecolor='black', label=s.capitalize()) for s in unique_statuses]
+    ax.legend(handles=legend_handles, loc="upper right", fontsize=10)
     ax.set_title("Keyword Expansion Overlap vs Gemini Baseline", fontsize=12, fontweight="bold", pad=15)
     ax.grid(axis="y", alpha=0.3)
 
@@ -82,7 +85,7 @@ def fig2_temporal_bar(out_dir):
     fig, ax = plt.subplots(figsize=(10, 5))
 
     models = [m for m in HISTORICAL_DATA if m["temporal_n"] is not None]
-    labels = [m["label"] for m in models]
+    labels = [m["short"] for m in models]
     values = [m["temporal_n"] / m["temporal_d"] for m in models]
     fractions = [f"{m['temporal_n']}/{m['temporal_d']}" for m in models]
     colors = [STATUS_COLORS[m["status"]] for m in models]
@@ -95,9 +98,13 @@ def fig2_temporal_bar(out_dir):
                 ha="center", va="bottom", fontsize=10, fontweight="bold")
 
     ax.set_xticks(range(len(models)))
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=10, rotation=20)
     ax.set_ylabel("Temporal Accuracy (fraction)", fontsize=11, fontweight="bold")
     ax.set_ylim([0, 1.15])
+    # Legend for statuses
+    unique_statuses = list({m['status'] for m in models})
+    legend_handles = [Patch(facecolor=STATUS_COLORS[s], edgecolor='black', label=s.capitalize()) for s in unique_statuses]
+    ax.legend(handles=legend_handles, loc="upper right", fontsize=10)
     ax.set_title("Temporal Extraction Accuracy", fontsize=12, fontweight="bold", pad=15)
     ax.grid(axis="y", alpha=0.3)
 
