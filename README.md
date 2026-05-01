@@ -96,6 +96,61 @@ pip install -r testing/benchmark/requirements-hf-local.txt
 
 For hosted HuggingFace API mode, set `HF_TOKEN`.
 
+**Setting up the Gemini API key**
+
+The `gemini:gemma-3-27b-it` model in the benchmark suite calls the Google Gemini API. Without a key it records a "missing GEMINI_API_KEY" error for every query and is excluded from results.
+
+1. Go to [Google AI Studio → API keys](https://aistudio.google.com/apikey) and create a key (free tier is sufficient).
+
+2. Create a `.env` file in the **project root** (next to `package.json`) if one does not already exist, and add your key:
+
+   ```
+   GEMINI_API_KEY=AIzaSyABC123exampleKeyGoesHere
+   ```
+
+   The benchmark env-loader (`testing/benchmark/env_loader.py`) automatically checks `.env`, `.env.local`, `backend/.env`, and `api/.env` — any of those locations works. The project root `.env` is the simplest choice when running benchmarks locally.
+
+3. Confirm the key is picked up:
+
+   ```bash
+   python -c "from testing.benchmark.env_loader import load_project_env_once; import os; load_project_env_once(); print('key found:', bool(os.environ.get('GEMINI_API_KEY')))"
+   ```
+
+   Expected output: `key found: True`
+
+> **Never commit `.env`** — it is gitignored.
+
+**Setting up Ollama and llama3**
+
+The `ollama:llama3:latest` model runs locally via [Ollama](https://ollama.com). Without it, the benchmark records a connection error for every query and skips that model.
+
+1. **Install Ollama** from [ollama.com/download](https://ollama.com/download). On Windows use the `.exe` installer; on macOS use the `.dmg`; on Linux:
+
+   ```bash
+   curl -fsSL https://ollama.com/install.sh | sh
+   ```
+
+2. **Pull the model** (one-time download, ~4.7 GB):
+
+   ```bash
+   ollama pull llama3
+   ```
+
+3. **Verify the model is available:**
+
+   ```bash
+   ollama list
+   ```
+
+   You should see a line like:
+
+   ```
+   NAME              ID              SIZE    MODIFIED
+   llama3:latest     365c0bd3c000    4.7 GB  a few seconds ago
+   ```
+
+4. **Ensure Ollama is running** before starting a benchmark. Ollama installs itself as a background service on macOS and Linux and starts automatically. On Windows you may need to launch it manually from the Start Menu or by running `ollama serve` in a terminal. The benchmark adapter connects to `http://localhost:11434` by default; override with the `OLLAMA_BASE_URL` environment variable if needed.
+
 **Models (fixed set)**
 
 - `gemini:gemma-3-27b-it`
