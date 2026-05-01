@@ -119,7 +119,7 @@ Several groups have looked at whether small models are viable substitutes for la
 
 \subsection{Evaluation Design}
 
-The benchmark comprises three evaluation runs over a fixed seven-model matrix and two dataset presets. The primary correctness runs cover two 72-query datasets: \texttt{rigorous-temporal}, a benchmark focused on temporal grounding with labeled date/time bounds, and \texttt{rigorous-robustness}, a dataset of 72 perturbed queries testing stability under adversarial and edge-case phrasing. A third \emph{latency-stability} run repeats each \texttt{rigorous-robustness} query three times (216 total query executions per model) to measure cross-run variance in parse behavior, keyword output, and tail latency; the analogous run for \texttt{rigorous-temporal} is pending. The \texttt{all-events} preset covering the full event catalog exceeds 10 hours on consumer machines and is excluded to prioritize reproducibility.
+The benchmark comprises three evaluation runs over a fixed seven-model matrix and two dataset presets. The primary correctness runs cover two 72-query datasets: \texttt{rigorous-temporal}, a benchmark focused on temporal grounding with labeled date/time bounds, and \texttt{rigorous-robustness}, a dataset of 72 perturbed queries testing stability under adversarial and edge-case phrasing. A third \emph{latency-stability} run repeats each query three times (216 total query executions per model) to measure cross-run variance in parse behavior, keyword output, and tail latency; both \texttt{rigorous-temporal} and \texttt{rigorous-robustness} are covered. The \texttt{all-events} preset covering the full event catalog exceeds 10 hours on consumer machines and is excluded to prioritize reproducibility.
 
 The protocol keeps the inference backend and execution mode explicit. All runs use the local Hugging Face backend on CUDA GPU to ensure consistent, hardware-isolated latency comparisons; CPU-constrained deployment is the intended production environment. The benchmark measures the interaction between model capacity and the Curia query-understanding pipeline under a stable test harness, permitting clean attribution of performance differences to model scale rather than implementation variation.
 
@@ -211,9 +211,9 @@ The local decoder-only candidates span the sub-1B region: \texttt{Qwen2.5-0.5B} 
 
 \subsection{Benchmark Design}
 
-We evaluate the same seven-model matrix on two 72-case correctness datasets (\texttt{rigorous-temporal} and \texttt{rigorous-robustness}) and one latency-stability dataset (three repeated runs of \texttt{rigorous-robustness}, 216 total executions per model). The temporal set emphasizes explicit temporal grounding; the robustness set introduces perturbed and edge-case query forms. All runs use the same prompt contract, decoding settings, and CUDA local backend configuration where applicable.
+We evaluate the same seven-model matrix on two 72-case correctness datasets (\texttt{rigorous-temporal} and \texttt{rigorous-robustness}) and two latency-stability datasets, one per correctness suite (three repeated runs each, 216 total executions per model). The temporal set emphasizes explicit temporal grounding; the robustness set introduces perturbed and edge-case query forms. All runs use the same prompt contract, decoding settings, and CUDA local backend configuration where applicable.
 
-All numeric values in this section are taken directly from the benchmark run artifacts: \texttt{report\_data/correctness/temporal/summary.json}, \texttt{report\_data/correctness/robustness/summary.json}, and \texttt{report\_data/latency/robustness/summary.json}, together with the corresponding \texttt{gate\_results.json} files. End-to-end retrieval metrics (top-$N$ event hit rate, MRR) are recorded in the run artifacts but are all zero across both datasets and all models, because the events corpus was not available in the evaluation environment; only extraction metrics are reported here.
+All numeric values in this section are taken directly from the benchmark run artifacts: \texttt{report\_data/correctness/temporal/summary.json}, \texttt{report\_data/correctness/robustness/summary.json}, \texttt{report\_data/latency/temporal/summary.json}, and \texttt{report\_data/latency/robustness/summary.json}, together with the corresponding \texttt{gate\_results.json} files. End-to-end retrieval metrics (top-$N$ event hit rate, MRR) are recorded in the run artifacts but are all zero across both datasets and all models, because the events corpus was not available in the evaluation environment; only extraction metrics are reported here.
 
 \subsection{Accuracy on the Temporal Dataset}
 
@@ -267,14 +267,26 @@ Relative to temporal, the robustness suite reveals a differentiated gate profile
 
 \subsection{Latency-Stability Results}
 
-Table~\ref{table:latency_stability} reports the latency-stability suite on \texttt{rigorous-robustness}, conducted with three runs per query (216 total executions per model). The reported p95, standard deviations, and error rates are aggregated across all runs. All seven models pass the latency-stability gate. The temporal latency-stability suite is pending; results are designated \textbf{[TBD]}.
+Table~\ref{table:latency_stability} reports the latency-stability suite across both \texttt{rigorous-temporal} and \texttt{rigorous-robustness}, each conducted with three runs per query (216 total executions per model per suite). The reported p95, standard deviations, and error rates are aggregated across all three runs. All seven models pass the latency-stability gate on both suites.
 
 \begin{table*}[t]
     \centering
-    \caption{Latency-Stability Suite: Robustness Dataset ($72 \times 3 = 216$ executions per model). Gate thresholds: p95 $\leq 15{,}000$\,ms; timeout rate $\leq 0.10$; error rate $\leq 0.25$; parse stddev $\leq 0.10$; KW F1 stddev $\leq 0.10$; p95 stddev $\leq 4{,}000$\,ms. All models pass. Temporal suite: \textbf{[TBD]}.}
+    \caption{Latency-Stability Suite ($72 \times 3 = 216$ executions per model per dataset). Gate thresholds: p95 $\leq 15{,}000$\,ms; timeout rate $\leq 0.10$; error rate $\leq 0.25$; parse stddev $\leq 0.10$; KW F1 stddev $\leq 0.10$; p95 stddev $\leq 4{,}000$\,ms. All models pass both suites.}
     \begin{tabular}{lcrrrrrr}
         \toprule
         \textbf{Model} & \textbf{Params} & \textbf{p95 (ms)} & \textbf{p95 Std (ms)} & \textbf{Parse Std} & \textbf{KW F1 Std} & \textbf{Error Rate} & \textbf{Gate} \\
+        \midrule
+        \multicolumn{8}{l}{\textit{(a) Temporal Dataset}} \\
+        \midrule
+        \texttt{gemma-3-27b-it} (Gemini)    & 27B   & 4{,}993 & 47.4  & 0.000 & 0.001 & 0.000 & Pass \\
+        \texttt{llama3:latest} (Ollama)     & 8B    & 3{,}877 & 54.4  & 0.000 & 0.004 & 0.000 & Pass \\
+        \texttt{Qwen2.5-1.5B}               & 1.5B  & 3{,}465 & 25.8  & 0.000 & 0.000 & 0.000 & Pass \\
+        \texttt{TinyLlama-1.1B-Chat}        & 1.1B  & 2{,}187 & 26.3  & 0.000 & 0.000 & 0.014 & Pass \\
+        \texttt{Qwen2.5-0.5B}               & 500M  & 2{,}859 & 33.0  & 0.000 & 0.000 & 0.014 & Pass \\
+        \texttt{google/flan-t5-base}        & 250M  & 1{,}085 & 28.7  & 0.000 & 0.000 & 0.139 & Pass \\
+        \texttt{LaMini-Flan-T5-248M}        & 248M  & 1{,}015 & 19.7  & 0.000 & 0.000 & 0.014 & Pass \\
+        \midrule
+        \multicolumn{8}{l}{\textit{(b) Robustness Dataset}} \\
         \midrule
         \texttt{gemma-3-27b-it} (Gemini)    & 27B   & 4{,}695 & 36.8  & 0.000 & 0.001 & 0.000 & Pass \\
         \texttt{llama3:latest} (Ollama)     & 8B    & 3{,}901 & 50.3  & 0.007 & 0.004 & 0.005 & Pass \\
@@ -288,7 +300,9 @@ Table~\ref{table:latency_stability} reports the latency-stability suite on \text
     \label{table:latency_stability}
 \end{table*}
 
-Among the HuggingFace-hosted local models, Qwen2.5-1.5B exhibits the strongest latency consistency: zero variance in parse success and keyword F1 across all three runs, with a p95 standard deviation of 110.8\,ms. Qwen2.5-0.5B similarly shows zero parse and keyword F1 variance (p95 stddev 40.4\,ms), as does TinyLlama (p95 stddev 91.0\,ms), though TinyLlama exhibits minor keyword F1 variance across runs (stddev 0.004). Gemini achieves near-zero variance on all metrics (p95 stddev 36.8\,ms, parse stddev 0.000), consistent with a deterministic temperature-zero remote API. Ollama records a small but nonzero error rate (0.5\%---one timeout across 216 executions) and minor parse variance (stddev 0.007), yet remains well within gate bounds. The T5-family models, despite failing both correctness gates, exhibit flat latency profiles (p95 stddev below 60\,ms) and error rates below 7\%.
+Across both suites the variance profiles are consistently low. Qwen2.5-1.5B exhibits the tightest p95 standard deviation among local HuggingFace models on both temporal (25.8\,ms) and robustness (110.8\,ms), with zero parse and keyword F1 variance in each case. Gemini is similarly stable, with p95 stddev of 47.4\,ms and 36.8\,ms on temporal and robustness respectively, and zero parse variance---consistent with a deterministic remote API at temperature zero. Ollama records one timeout across 216 robustness executions (error rate 0.5\%) but runs cleanly on temporal (error rate 0.0\%), with minor keyword F1 variance (stddev 0.004) on both suites.
+
+The most notable cross-suite difference is in error rate for the encoder-decoder models. On robustness, flan-t5-base records a 6.9\% error rate; on temporal this rises to 13.9\%, suggesting that the more complex temporal phrasing of \texttt{rigorous-temporal} places greater strain on the seq2seq architecture despite its low per-token compute cost. TinyLlama-1.1B and Qwen2.5-0.5B each introduce a 1.4\% error rate on temporal (zero on robustness for both), consistent with the occasional extreme-latency outliers observed in the single-run correctness data; across three runs the p95 values remain stable (2,187\,ms and 2,859\,ms respectively), confirming these as rare outlier events rather than systematic degradation.
 
 \subsection{Research Questions (RQ1--RQ4)}
 
@@ -310,11 +324,11 @@ Both T5-family models fail both datasets with 0\% date exact-match, 0\% time, an
 
 \subsubsection{RQ3: How stable are results as size decreases?}
 
-\textbf{Determination: All models pass the latency-stability gate on the robustness suite; stability metrics do not correlate monotonically with parameter count.}
+\textbf{Determination: All models pass the latency-stability gate on both suites; stability metrics do not correlate monotonically with parameter count, and cross-suite variance profiles are broadly consistent.}
 
-The latency-stability suite provides direct cross-run variance measurements for the robustness dataset. All seven models satisfy every threshold in the latency-stability gate, indicating that none exhibit catastrophic instability under three repeated runs. Qwen2.5-1.5B shows the most consistent behavior among local models: zero variance in both parse success and keyword F1 across runs, with a p95 latency standard deviation of 110.8\,ms. Gemini achieves near-zero variance on all metrics (p95 stddev 36.8\,ms), consistent with a deterministic remote API at temperature zero. Ollama records one timeout across 216 executions (error rate 0.5\%), which, while within gate bounds, is the only model to report any timeout events in this suite. The T5-family models, despite failing both correctness gates, demonstrate flat and consistent latency profiles (p95 stddev below 60\,ms).
+The latency-stability suite provides direct cross-run variance measurements for both \texttt{rigorous-temporal} and \texttt{rigorous-robustness}. All seven models satisfy every threshold of the latency-stability gate on both suites, indicating that none exhibit catastrophic instability under three repeated runs. Qwen2.5-1.5B shows the most consistent behavior among local models: zero variance in parse success and keyword F1 on both suites, with p95 standard deviations of 25.8\,ms (temporal) and 110.8\,ms (robustness). Gemini achieves near-zero variance across all stability metrics on both suites (p95 stddev 47.4\,ms temporal; 36.8\,ms robustness), consistent with a deterministic remote API at temperature zero.
 
-For the temporal dataset, where the latency-stability suite is pending (\textbf{[TBD]}), single-run tail-latency values serve as a proxy for within-session variability. On the temporal correctness run, Qwen2.5-0.5B exhibits a pronounced latency tail (p50 2,298\,ms, p95 3,058\,ms, max 35,646\,ms), while TinyLlama-1.1B shows an extreme outlier (max 27,767\,ms) despite a low p50 of 1,792\,ms. These outliers likely correspond to individual queries that trigger extended decoding or recovery; their prevalence will be quantifiable once the temporal latency-stability run completes.
+The principal cross-suite differences involve error rates rather than latency variance. Ollama records one timeout on the robustness suite (error rate 0.5\%) but runs without error on temporal, suggesting that perturbed query forms are marginally harder for its inference path. TinyLlama-1.1B and Qwen2.5-0.5B each produce a 1.4\% error rate on temporal (zero on robustness), corresponding to rare extreme-latency outlier queries; the p95 values across three runs (2,187\,ms and 2,859\,ms respectively) confirm these are isolated events rather than systematic degradation. The most pronounced cross-suite shift is in flan-t5-base's error rate, which doubles from 6.9\% on robustness to 13.9\% on temporal---consistent with the seq2seq architecture being sensitive to the more complex temporal phrasing in \texttt{rigorous-temporal}---yet remains within the 25\% gate threshold. Stability, like correctness, therefore varies by model-dataset interaction rather than by parameter count alone.
 
 \subsubsection{RQ4: What model size offers the best tradeoff among stability, accuracy, and latency?}
 
@@ -343,7 +357,7 @@ Gemini passes all three suites but operates at higher latency (4,523\,ms and 4,5
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{../report_data/latency/robustness/visuals/fig3_latency.png}
-    \caption{Latency-stability suite: latency distributions across three repeated runs on the robustness dataset. Distributions reflect 216 executions per model. The figure illustrates the narrow spread for most models, with T5-family models occupying the sub-1,000\,ms range and decoder-only models clustering between 1,300--4,700\,ms at the p95 level.}
+    \caption{Latency-stability suite: latency distributions across three repeated runs on the robustness dataset (216 executions per model). The temporal suite exhibits an analogous distribution. The narrow p95 spread for most models reflects the low latency variance reported in Table~\ref{table:latency_stability}; T5-family models occupy the sub-1,100\,ms range while decoder-only models cluster between 1,300--5,000\,ms.}
     \label{fig:latency_stability}
 \end{figure}
 
@@ -365,7 +379,6 @@ Key findings:
 
 \begin{itemize}
     \item \textbf{Quantized local models}: GGUF int4/int8 variants of Qwen2.5-1.5B and Qwen2.5-3B to improve the local accuracy-latency frontier without full-precision CPU inference.
-    \item \textbf{Temporal latency-stability}: Complete the latency-stability run for \texttt{rigorous-temporal} to replace the current [TBD] results and enable a unified stability assessment across both datasets.
     \item \textbf{Confidence-gated fallback}: Use token log-probabilities to decide when to trust LLM output versus fall back to rules, reducing unnecessary fallback invocations.
     \item \textbf{Recurring event queries}: Extend temporal extraction to handle recurring expressions (``every Monday'', ``weekly seminars'').
     \item \textbf{Expanded benchmark}: Add typo-robustness and cross-domain query variants; add a retrieval evaluation dataset with labeled relevant events to enable end-to-end hit-rate measurement currently unavailable due to corpus constraints.
